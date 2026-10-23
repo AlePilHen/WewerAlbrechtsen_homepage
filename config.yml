@@ -1,0 +1,214 @@
+# ------------------------------------------------------------------
+# Dashboard configuration. Edit this file; the page rebuilds daily.
+# ------------------------------------------------------------------
+
+group:
+  name: Wewer Albrechtsen Group
+  subtitle: Clinical Biochemistry · Bispebjerg Hospital
+  # ORCIDs of group members. Used for "Latest publication" and the
+  # papers-per-year chart (looked up in Europe PMC).
+  # While this list is empty, the page shows an example paper.
+  orcids:
+    - "0000-0003-4230-5753"  # Nicolai
+    - "0000-0003-2144-1385"  # Marie
+    - "0009-0005-2855-208X"  # Annelaura
+    - "0000-0003-4000-5669"  # Sasha
+    - "0009-0006-2200-8099"  # Jesper
+    - "0009-0005-4575-2593"  # Alexander
+
+  # Optional extra search for members without an ORCID (Europe PMC syntax), e.g.
+  # extra_query: 'AUTH:"Wewer Albrechtsen NJ"'
+  # This only searches PubMed (via Europe PMC); OpenAlex is searched by ORCID only.
+  extra_query: ""
+  # OpenAlex needs a free API key. Do NOT put it in this file (it is public):
+  # store it as the GitHub secret OPENALEX_API_KEY (see the README).
+
+# ------------------------------------------------------------------
+# Journal lists. Names must match the NLM abbreviation that
+# Europe PMC uses (search the journal in PubMed's NLM Catalog if unsure).
+# ------------------------------------------------------------------
+journals:
+  top_tier:
+    - N Engl J Med
+    - Lancet
+    - JAMA
+    - BMJ
+    - Nature
+    - Science
+    - Cell
+    - Nat Med
+    - Lancet Diabetes Endocrinol
+    - Cell Metab
+    - Nat Metab
+    - Proc Natl Acad Sci U S A
+  key_field:
+    - Diabetes
+    - Diabetes Care
+    - Diabetologia
+    - Diabetes Obes Metab
+    - J Clin Endocrinol Metab
+    - J Hepatol
+    - Hepatology
+    - Gastroenterology
+    - Mol Cell Proteomics
+    - J Proteome Res
+    - Clin Chem
+    - Circulation
+    - Eur Heart J
+
+# ------------------------------------------------------------------
+# New papers. Each widget has tabs; each tab is one search.
+#
+#   all_of:   a list of term groups. A paper must match at least one
+#             term from EVERY group (in title or abstract).
+#   none_of:  terms that exclude a paper.
+#   fields:   where to look: [TITLE, ABSTRACT] (default) or [TITLE].
+#   journals: any  -> all journals and preprints
+#             key  -> only journals in the two lists above
+#   window_days, limit: optional per-tab overrides.
+#   query:    instead of all_of, a raw Europe PMC query
+#             (https://europepmc.org/searchsyntax).
+# ------------------------------------------------------------------
+window_days: 21
+limit: 20
+
+paper_widgets:
+  - title: Biomarkers & proteomics
+    tabs:
+      - label: Plasma proteomics
+        all_of:
+          - [proteomics, proteome, proteomic, Olink, SomaScan, "mass spectrometry", "affinity proteomics"]
+          - [diabetes, obesity, "insulin resistance", MASLD, MASH, NAFLD, "fatty liver", steatosis, cardiometabolic, "metabolic syndrome"]
+        journals: key
+
+      - label: Liver disease biomarkers
+        all_of:
+          - [MASLD, MASH, NAFLD, NASH, MetALD, "fatty liver", "steatotic liver", "liver fibrosis"]
+          - [biomarker, biomarkers, "non-invasive", noninvasive, "diagnostic accuracy", "risk score", proteomic, proteomics, "circulating"]
+        journals: any
+
+      - label: Hormone assays & methods
+        all_of:
+          - [glucagon, "GLP-1", "glucagon-like peptide", GIP, oxyntomodulin, "C-peptide", incretin, "amino acids"]
+          - [assay, immunoassay, ELISA, "LC-MS/MS", "LC-MS", "mass spectrometry", "analytical validation", "method comparison", "interlaboratory"]
+        journals: any
+
+  - title: Metabolism & treatment
+    tabs:
+      - label: Glucagon & liver–alpha cell axis
+        fields: [TITLE]
+        all_of:
+          - [glucagon, GCGR, "alpha cell", "alpha cells", "alpha-cell", "α-cell", "α-cells", hyperglucagonemia, hyperglucagonaemia, "liver-alpha cell axis"]
+        none_of: ["glucagon-like peptide-1", "glucagon-like peptide 1"]
+        journals: any
+
+      - label: Incretin & multi-agonist drugs
+        all_of:
+          - [semaglutide, tirzepatide, retatrutide, survodutide, mazdutide, cagrilintide, CagriSema, orforglipron, liraglutide, dulaglutide,
+             "GLP-1 receptor agonist", "GLP-1 receptor agonists", "GLP-1RA", "dual agonist", "triple agonist", "co-agonist", amylin]
+        journals: key
+
+      - label: MASLD/MASH
+        all_of:
+          - [MASLD, MASH, NAFLD, NASH, MetALD, "steatotic liver disease", "fatty liver", steatohepatitis]
+        journals: key
+
+      - label: GDF15
+        all_of:
+          - [GDF15, "GDF-15", "growth differentiation factor 15", GFRAL]
+        journals: any
+        window_days: 30
+
+      - label: Murine models
+        all_of:
+          - [mice, mouse, murine, rat, rats, rodent]
+          - [diabetes, diabetic, obesity, obese, "insulin resistance", MASLD, MASH, NAFLD, "fatty liver", glucagon, "beta cell", "β-cell", islet]
+        journals: key
+
+      - label: Clinical trials & epidemiology
+        all_of:
+          - [randomized, randomised, "randomized controlled trial", cohort, "population-based", registry, "Mendelian randomization", "meta-analysis", epidemiology, epidemiological]
+          - [diabetes, "type 1 diabetes", "type 2 diabetes", "gestational diabetes", GDM, "cardiovascular disease", "cardiovascular outcomes", "heart failure", "myocardial infarction", stroke]
+        journals: key
+        window_days: 30
+
+# ------------------------------------------------------------------
+# News (any RSS or Atom feed)
+#
+#   fetch_images: true  -> for items where the feed has no image, open each
+#                          article page and use its preview image. Makes the
+#                          build a bit slower (about 1 s per item).
+#   logo: <image URL>   -> shown when an item has no image. If left out, the
+#                          feed's own logo is used when it has one; otherwise
+#                          the source name is shown.
+#   exclude_types: [..] -> leave out these article types, read from each article
+#                          page (e.g. Correspondence, Editorial, Comment).
+#   include_types: [..] -> the opposite: keep ONLY these article types.
+#   exclude_titles: [..]-> leave out items whose title matches (regular
+#                          expressions), e.g. "^STAT\\+:" for paywalled STAT+ stories.
+# Images are shown straight from the publishers' sites, not copied.
+# ------------------------------------------------------------------
+news:
+  - label: Nature
+    url: https://www.nature.com/nature.rss
+    limit: 10
+    fetch_images: true
+    exclude_types: [Correspondence]
+    exclude_titles: ["^Author Correction", "^Publisher Correction"]
+    logo: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ13GXzPPsGsd18oo-u3MlKBjG37dPlnAFN7OhbH_Rc5w&s=10
+  - label: Science
+    url: https://www.science.org/rss/news_current.xml
+    limit: 15
+    fetch_images: true
+    exclude_titles: ["^Author Correction", "^Publisher Correction"]
+    logo: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrKXhWHzN2vtlMzenPK-RVMc0nZRe-AnFBWpNRKbStJQ&s=10
+  - label: Knowable
+    url: https://knowablemagazine.org/rss
+    limit: 10
+  - label: eLife Magazine
+    url: https://elifesciences.org/rss/magazine.xml
+    limit: 10
+    # eLife's feed has no logo; paste a logo image URL here if you want one:
+    logo: https://upload.wikimedia.org/wikipedia/commons/5/50/Elife-logo-2020.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail_unscaled&_=20200316134344
+  - label: Retraction Watch
+    url: https://retractionwatch.com/feed/
+    limit: 10
+
+# ------------------------------------------------------------------
+# Daily boxes (right column)
+# ------------------------------------------------------------------
+daily:
+  target_of_the_day: false     # approved drug targets (ChEMBL + UniProt)
+  spotlight_feed: https://www.proteinspotlight.org/spotlight/rss/index.xml
+  owid_feed: https://ourworldindata.org/atom-data-insights.xml
+  motm_feed: https://pdb101.rcsb.org/motm/rss.xml
+
+# ------------------------------------------------------------------
+# Quick links
+# ------------------------------------------------------------------
+links:
+  - group: Literature
+    items:
+      - { name: PubMed, url: "https://pubmed.ncbi.nlm.nih.gov/", note: NCBI }
+      - { name: Europe PMC, url: "https://europepmc.org/", note: EMBL-EBI }
+      - { name: bioRxiv, url: "https://www.biorxiv.org/", note: preprints }
+      - { name: medRxiv, url: "https://www.medrxiv.org/", note: preprints }
+  - group: Proteins & data
+    items:
+      - { name: UniProt, url: "https://www.uniprot.org/", note: proteins }
+      - { name: Protein Atlas, url: "https://www.proteinatlas.org/", note: tissue & plasma }
+      - { name: Open Targets, url: "https://platform.opentargets.org/", note: target–disease }
+      - { name: PRIDE, url: "https://www.ebi.ac.uk/pride/", note: MS data }
+      - { name: STRING, url: "https://string-db.org/", note: interactions }
+  - group: Clinical
+    items:
+      - { name: ADA Standards of Care, url: "https://professional.diabetes.org/standards-of-care", note: guidelines }
+      - { name: EASD, url: "https://www.easd.org/", note: diabetes society }
+      - { name: EASL, url: "https://easl.eu/", note: liver society }
+      - { name: ClinicalTrials.gov, url: "https://clinicaltrials.gov/", note: trials }
+  - group: Local & funding
+    items:
+      - { name: NNF CPR, url: "https://www.cpr.ku.dk/", note: Protein Research }
+      - { name: Steno Copenhagen, url: "https://www.sdcc.dk/", note: SDCC }
+      - { name: Novo Nordisk Fonden, url: "https://novonordiskfonden.dk/", note: funding }
+      - { name: DFF, url: "https://dff.dk/", note: funding }

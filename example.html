@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Wewer Albrechtsen Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: three columns — group (teal) | literature & news (blue) | daily picks (ochre).
+   Editorial section heads: coloured kicker label, bold display title, dark rule. One column on phones. */
+:root {
+  --bg: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f4f6f9;
+  --fg: #1a2330;
+  --muted: #5c6a7b;
+  --line: #dbe1e8;
+  --blue: #2c5aa8;  --blue-soft: #e3ebf8;
+  --teal: #1d6b67;  --teal-soft: #dcefec;
+  --ochre: #94650f; --ochre-soft: #f5ebd6;
+  --ok: #2c7a4c;
+  --bad: #b23e2c;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151b; --surface: #191f28; --surface-2: #202733; --fg: #e2e7ee; --muted: #8f9cad; --line: #29313d;
+    --blue: #86a9e8; --blue-soft: #233149; --teal: #5bbfb5; --teal-soft: #173230; --ochre: #e2b45c; --ochre-soft: #2f2715;
+    --ok: #6cc28e; --bad: #e88371;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b; --surface: #191f28; --surface-2: #202733; --fg: #e2e7ee; --muted: #8f9cad; --line: #29313d;
+  --blue: #86a9e8; --blue-soft: #233149; --teal: #5bbfb5; --teal-soft: #173230; --ochre: #e2b45c; --ochre-soft: #2f2715;
+  --ok: #6cc28e; --bad: #e88371;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 14.5px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--hue, var(--blue)); }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 3px; }
+.wrap { max-width: 1480px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 28px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3vw, 30px); margin: 2px 0 0; letter-spacing: -.01em; text-wrap: balance; }
+.sub { font-size: 13px; color: var(--muted); }
+.search { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.search input {
+  font: inherit; width: min(300px, 100%); padding: 8px 12px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.search a { font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--muted); white-space: nowrap; }
+.search a:hover { color: var(--blue); border-color: var(--blue); }
+
+/* Columns, each with its own colour */
+.cols { display: grid; grid-template-columns: 280px minmax(0, 1fr) 320px; gap: 26px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.col.left  { --hue: var(--teal);  --hue-soft: var(--teal-soft); }
+.col.mid   { --hue: var(--blue);  --hue-soft: var(--blue-soft); }
+.col.right { --hue: var(--ochre); --hue-soft: var(--ochre-soft); }
+@media (max-width: 1150px) {
+  .cols { grid-template-columns: 260px minmax(0, 1fr); }
+  .col.right { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+}
+@media (max-width: 720px) { .cols { grid-template-columns: minmax(0, 1fr); } .col.right { display: flex; } }
+
+/* Section heads (editorial style) */
+.widget { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.w-head { display: flex; flex-direction: column; gap: 1px; }
+.kicker { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--hue); display: flex; justify-content: space-between; gap: 10px; }
+.kicker .src { color: var(--muted); letter-spacing: .04em; text-transform: none; }
+.w-title { font-family: var(--font-display); font-weight: 700; font-size: 19px; line-height: 1.15; margin: 0; letter-spacing: -.01em; padding-bottom: 6px; border-bottom: 2px solid var(--fg); text-wrap: balance; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; min-width: 0; }
+.example { font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; }
+
+/* Tabs + filters */
+.tabs { display: flex; flex-wrap: wrap; gap: 0 16px; border-bottom: 1px solid var(--line); margin: -2px 0 8px; }
+.tab { font: inherit; font-size: 13px; background: none; border: 0; padding: 5px 0 7px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab:hover { color: var(--fg); }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--hue); font-weight: 600; }
+.tab .n { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 400; }
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 2px; }
+.chip { font: inherit; font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--hue-soft); border-color: var(--hue); color: var(--fg); }
+.chip .n { font-family: var(--font-mono); font-size: 10.5px; margin-left: 3px; }
+.scope { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+
+/* Lists */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.list li { padding: 8px 0; border-top: 1px solid var(--line); min-width: 0; }
+.list li:first-child { border-top: 0; padding-top: 4px; }
+.item-title { font-weight: 500; display: block; overflow-wrap: anywhere; }
+.meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.meta .journal.key { color: var(--blue); }
+.tag { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; border-radius: 3px; padding: 0 4px; border: 1px solid currentColor; }
+.tag.pre { color: var(--ochre); }
+.tag.rev { color: var(--teal); }
+.tag.top { color: var(--blue); }
+/* News items with thumbnails */
+.list li.news { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; align-items: start; }
+.thumb { width: 84px; height: 56px; border-radius: 4px; overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); display: grid; place-items: center; }
+.thumb .th-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb:has(.th-logo) { background: #ffffff; } /* logos are made for a white background, in both themes */
+.thumb .th-logo { max-width: 78%; max-height: 72%; object-fit: contain; display: block; }
+.thumb:has(.th-text) { background: var(--blue-soft); border-color: transparent; }
+.thumb .th-text { font-family: var(--font-display); font-weight: 700; font-size: 11.5px; line-height: 1.1; text-align: center; color: var(--blue); padding: 4px; overflow-wrap: anywhere; }
+.more { font: inherit; font-size: 12.5px; background: none; border: 0; color: var(--hue); cursor: pointer; padding: 6px 0 0; }
+.empty { color: var(--muted); font-size: 13px; margin: 6px 0; }
+
+/* Latest publication */
+.latest { background: var(--teal-soft); border-color: transparent; padding: 14px 16px; }
+.latest .title { font-family: var(--font-display); font-weight: 600; font-size: 18px; line-height: 1.25; text-wrap: balance; display: block; }
+.latest .who { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.latest .where { font-family: var(--font-mono); font-size: 11.5px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.latest .where .j { color: var(--teal); font-weight: 500; }
+.latest .found { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+.latest .go { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 500; color: var(--teal); }
+
+/* Links */
+.links { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 14px; }
+.links a { padding: 4px 0; font-size: 13.5px; display: flex; flex-direction: column; min-width: 0; }
+.links a span { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
+.link-group { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--hue); grid-column: 1 / -1; padding-top: 8px; }
+.link-group:first-child { padding-top: 0; }
+
+/* Chart */
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .axis { fill: var(--muted); font-family: var(--font-mono); font-size: 10px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .bar { fill: var(--teal); opacity: .55; }
+.chart .bar.now { opacity: 1; }
+.chart .val { fill: var(--fg); font-family: var(--font-mono); font-size: 10px; }
+
+/* Daily boxes */
+.daily-img { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--line); background: #fff; }
+.img-missing { font-size: 12px; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 18px 12px; text-align: center; }
+.daily h3 { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.3; margin: 10px 0 4px; text-wrap: balance; }
+.daily p { margin: 6px 0 0; font-size: 13.5px; }
+.daily .src { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.daily .src a { color: var(--ochre); }
+.spotlight .prots { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; padding: 8px 10px; background: var(--ochre-soft); border-radius: 4px; font-size: 13px; }
+.spotlight .prots .lbl { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ochre); }
+.spotlight .prots a span { color: var(--muted); }
+.target .sym { font-family: var(--font-mono); font-size: 24px; font-weight: 500; letter-spacing: -.01em; color: var(--ochre); }
+.target .pname { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+.target .why { margin-top: 10px; padding: 8px 10px; background: var(--ochre-soft); border-radius: 4px; font-size: 13px; }
+.target .why b { font-weight: 600; }
+
+/* Footer / status */
+footer { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+footer details { max-width: 640px; width: 100%; }
+footer summary { cursor: pointer; list-style: none; }
+footer summary::-webkit-details-marker { display: none; }
+.status { list-style: none; margin: 10px 0 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); text-align: left; }
+.status li { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--ok); display: inline-block; transform: translateY(-1px); }
+.dot.bad { background: var(--bad); }
+.status .why { overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) { .tab, .chip, .search a { transition: color .15s, border-color .15s, background-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 id="group-name"></h1>
+      <div class="sub" id="group-sub"></div>
+    </div>
+    <div class="search" role="search">
+      <label for="q" hidden>Search a gene, protein or topic</label>
+      <input id="q" type="search" placeholder="Search a gene, protein or topic…" autocomplete="off">
+      <a id="q-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed ↗</a>
+      <a id="q-uniprot" href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt ↗</a>
+      <a id="q-ot" href="https://platform.opentargets.org/" target="_blank" rel="noopener">Open Targets ↗</a>
+    </div>
+  </header>
+
+  <main class="cols">
+    <section class="col left" aria-label="Group">
+      <div class="widget">
+        <div class="w-head"><span class="kicker"><span>The group</span><span id="latest-ex"></span></span><h2 class="w-title">Latest publication</h2></div>
+        <div class="card latest" id="latest"></div>
+      </div>
+      <div class="widget">
+        <div class="w-head"><span class="kicker"><span>The group</span><span id="chart-ex"></span></span><h2 class="w-title">Papers per year</h2></div>
+        <div class="card chart" id="chart"></div>
+      </div>
+      <div class="widget">
+        <div class="w-head"><span class="kicker"><span>Bookmarks</span></span><h2 class="w-title">Quick links</h2></div>
+        <div class="card links" id="links"></div>
+      </div>
+    </section>
+
+    <section class="col mid" aria-label="News and literature" id="mid"></section>
+
+    <section class="col right" aria-label="Daily picks">
+      <div class="widget" id="spotlight-w" hidden>
+        <div class="w-head"><span class="kicker"><span>Monthly pick</span><span class="src">Protein Spotlight · SIB</span></span><h2 class="w-title">Protein Spotlight</h2></div>
+        <div class="card daily spotlight" id="spotlight"></div>
+      </div>
+      <div class="widget" id="target-w">
+        <div class="w-head"><span class="kicker"><span>Daily pick</span><span class="src" id="target-note"></span></span><h2 class="w-title">Target of the day</h2></div>
+        <div class="card daily target" id="target"></div>
+      </div>
+      <div class="widget">
+        <div class="w-head"><span class="kicker"><span>Latest insight</span><span class="src">Our World in Data</span></span><h2 class="w-title">Data insight</h2></div>
+        <div class="card daily" id="owid"></div>
+      </div>
+      <div class="widget">
+        <div class="w-head"><span class="kicker"><span>Monthly pick</span><span class="src">PDB-101</span></span><h2 class="w-title">Molecule of the month</h2></div>
+        <div class="card daily" id="motm"></div>
+      </div>
+    </section>
+  </main>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+const DASH = {"group": {"name": "Wewer Albrechtsen Group", "subtitle": "Clinical Biochemistry · Bispebjerg Hospital"}, "links": [{"group": "Literature", "items": [{"name": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/", "note": "NCBI"}, {"name": "Europe PMC", "url": "https://europepmc.org/", "note": "EMBL-EBI"}, {"name": "bioRxiv", "url": "https://www.biorxiv.org/", "note": "preprints"}, {"name": "medRxiv", "url": "https://www.medrxiv.org/", "note": "preprints"}]}, {"group": "Proteins & data", "items": [{"name": "UniProt", "url": "https://www.uniprot.org/", "note": "proteins"}, {"name": "Protein Atlas", "url": "https://www.proteinatlas.org/", "note": "tissue & plasma"}, {"name": "Open Targets", "url": "https://platform.opentargets.org/", "note": "target–disease"}, {"name": "PRIDE", "url": "https://www.ebi.ac.uk/pride/", "note": "MS data"}, {"name": "STRING", "url": "https://string-db.org/", "note": "interactions"}]}, {"group": "Clinical", "items": [{"name": "ADA Standards of Care", "url": "https://professional.diabetes.org/standards-of-care", "note": "guidelines"}, {"name": "EASD", "url": "https://www.easd.org/", "note": "diabetes society"}, {"name": "EASL", "url": "https://easl.eu/", "note": "liver society"}, {"name": "ClinicalTrials.gov", "url": "https://clinicaltrials.gov/", "note": "trials"}]}, {"group": "Local & funding", "items": [{"name": "NNF CPR", "url": "https://www.cpr.ku.dk/", "note": "Protein Research"}, {"name": "Steno Copenhagen", "url": "https://www.sdcc.dk/", "note": "SDCC"}, {"name": "Novo Nordisk Fonden", "url": "https://novonordiskfonden.dk/", "note": "funding"}, {"name": "DFF", "url": "https://dff.dk/", "note": "funding"}]}], "journals": {"top_tier": ["N Engl J Med", "Lancet", "JAMA", "BMJ", "Nature", "Science", "Cell", "Nat Med", "Lancet Diabetes Endocrinol", "Cell Metab", "Nat Metab", "Proc Natl Acad Sci U S A"], "key_field": ["Diabetes", "Diabetes Care", "Diabetologia", "Diabetes Obes Metab", "J Clin Endocrinol Metab", "J Hepatol", "Hepatology", "Gastroenterology", "Mol Cell Proteomics", "J Proteome Res", "Clin Chem", "Circulation", "Eur Heart J"]}, "generated": "2026-10-22T12:25+00:00", "paper_widgets": [{"title": "Biomarkers & proteomics", "tabs": [{"label": "Plasma proteomics", "window_days": 21, "key_only": false, "items": [{"title": "Cardiometabolic Protein Profile Changes During Gender-Affirming Hormone Therapy: A Prospective Clinical Study", "authors": "Madsen EB et al.", "journal": "Clin Endocrinol (Oxf)", "date": "2026-10-08", "preprint": false, "review": false, "tier": null, "url": "https://doi.org/10.1111/cen.70209"}, {"title": "Data-Driven Cluster Subtyping and Its Association With Cardiometabolic Disease Progression: Integrating Multi-State…", "authors": "Huang Y et al.", "journal": "Diabetes Obes Metab", "date": "2026-10-06", "preprint": false, "review": false, "tier": "key", "url": "https://doi.org/10.1111/dom.71423"}, {"title": "Integrated proteomics and metabolomics for predicting cardiometabolic risk in pregnant women living with HIV: current evidence…", "authors": "Eke AC et al.", "journal": "Expert Rev Mol Diagn", "date": "2026-10-05", "preprint": false, "review": true, "tier": null, "url": "https://doi.org/10.1080/14737159.2026.2741065"}, {"title": "Glycation proteomics identifies creatine kinase as a mediator of the effects of methylglyoxal on mitochondrial…", "authors": "Lake RF et al.", "journal": "bioRxiv", "date": "2026-10-02", "preprint": true, "review": false, "tier": null, "url": "https://doi.org/10.64898/2026.10.01.756032"}, {"title": "Proteome analysis of different tissues in pregnant women with gestational diabetes and type 1 diabetes mellitus", "authors": "Cantürk Z et al.", "journal": "J Mol Endocrinol", "date": "2026-10-01", "preprint": false, "review": false, "tier": null, "url": "https://doi.org/10.1530/jme-26-0064"}, {"title": "Plasma proteomics framework predicts metabolic dysfunction-associated steatotic liver disease up to 16 years before onset", "authors": "", "journal": "Nat Aging", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://www.nature.com/articles/s43587-026-01183-2"}, {"title": "Integrated serum proteomic and liver genomic analyses identify molecular signatures associated with metabolic dysfunction-associated steatotic liver disease: a multi-cohort study", "authors": "", "journal": "BMC Med", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://link.springer.com/article/10.1186/s12916-026-04834-8"}, {"title": "Multi-organ proteomic atlas of obesity regression in male mice", "authors": "", "journal": "Nat Metab", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.nature.com/articles/s42255-026-01599-5"}]}, {"label": "Liver disease biomarkers", "window_days": 21, "key_only": false, "items": [{"title": "Plasma proteomics framework predicts metabolic dysfunction-associated steatotic liver disease up to 16 years before onset", "authors": "", "journal": "Nat Aging", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://www.nature.com/articles/s43587-026-01183-2"}, {"title": "Integrated serum proteomic and liver genomic analyses identify molecular signatures associated with metabolic dysfunction-associated steatotic liver disease: a multi-cohort study", "authors": "", "journal": "BMC Med", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://link.springer.com/article/10.1186/s12916-026-04834-8"}, {"title": "Large-scale plasma proteomics improves prediction of heart failure among MASLD individuals: A prospective cohort study", "authors": "", "journal": "", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://www.sciencedirect.com/science/article/pii/S2666667726002370"}, {"title": "Decoding fibrosis: Transcriptomic and clinical insights via AI-derived collagen deposition phenotypes in MASLD", "authors": "", "journal": "Hepatology", "date": "", "preprint": false, "review": false, "tier": "key", "url": "https://www.ovid.com/jnls/hep/fulltext/10.1097/hep.0000000000001811~decoding-fibrosis-transcriptomic-and-clinical-insights-via"}, {"title": "Lipidomics and proteomics in MASLD: reading the molecular script toward precision therapeutics", "authors": "", "journal": "", "date": "", "preprint": false, "review": true, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/42461367/"}]}, {"label": "Hormone assays & methods", "window_days": 21, "key_only": false, "items": [{"title": "Interlaboratory Comparison of a Glucagon and Oxyntomodulin Immuno-LC-MS/MS Assay: Implications for Diabetes Research", "authors": "", "journal": "", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/42400596/"}, {"title": "Development and validation of a sensitive HPLC-MS/MS method for the analysis of semaglutide in human plasma", "authors": "", "journal": "", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13540083/"}, {"title": "Development and Validation of a Liquid Chromatography/Tandem Mass Spectrometry Method for the Quantification of the GLP-1 Analog Semaglutide in Rat Plasma, and Its Application in a Pharmacokinetic Study", "authors": "", "journal": "Pharmaceutics", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://doi.org/10.3390/pharmaceutics18070770"}]}]}, {"title": "Metabolism & treatment", "tabs": [{"label": "Glucagon & liver–alpha cell axis", "window_days": 21, "key_only": false, "items": [{"title": "Acute glucagon infusion induces natriuresis and diuresis through a direct tubular mechanism involving overlapping receptor pathways", "authors": "", "journal": "Am J Physiol Renal Physiol", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://doi.org/10.1152/ajprenal.00195.2026"}, {"title": "Pancreatic α-cells integrate immune and neuronal stimuli for insulin secretion", "authors": "", "journal": "Cell Rep", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://www.cell.com/cell-reports/fulltext/S2211-1247(26)00664-9"}, {"title": "Paracrine inhibition via G protein inwardly rectifying potassium channels regulates glucagon secretion from human pancreatic alpha cells", "authors": "", "journal": "Cell Rep", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://www.cell.com/cell-reports/fulltext/S2211-1247(26)00146-4"}, {"title": "Alpha cell dysfunction in type 2 diabetes: associations with insulin resistance and reduced insulin secretion", "authors": "", "journal": "", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/42379653/"}, {"title": "Glucagon, the Alpha Cell, and Potential Targets for Diabetes Treatment", "authors": "", "journal": "", "date": "", "preprint": false, "review": true, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/41206016/"}]}, {"label": "Incretin & multi-agonist drugs", "window_days": 21, "key_only": true, "items": [{"title": "Retatrutide in adults with obesity and type 2 diabetes (TRIUMPH-2): a double-blind, parallel-group, randomised, placebo-controlled, phase 3 trial", "authors": "", "journal": "Lancet", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)01861-1/abstract"}, {"title": "Cagrilintide–semaglutide (CagriSema) versus semaglutide or cagrilintide in people with type 2 diabetes (REIMAGINE 2): a double-blind, randomised, controlled, phase 3 study", "authors": "", "journal": "Lancet Diabetes Endocrinol", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/landia/article/PIIS2213-8587(26)00125-7/abstract"}, {"title": "Efficacy and safety of retatrutide, a GIP, GLP-1, and glucagon receptor agonist, in people with type 2 diabetes and inadequate glycaemic control with diet and exercise (TRANSCEND-T2D-1): a double-blind, randomised, phase 3 trial", "authors": "", "journal": "Lancet", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)00967-0/abstract"}]}, {"label": "MASLD/MASH", "window_days": 21, "key_only": true, "items": [{"title": "Update in clinical science: MASLD in children and adolescents", "authors": "", "journal": "J Hepatol", "date": "", "preprint": false, "review": true, "tier": "key", "url": "https://www.journal-of-hepatology.eu/article/S0168-8278(26)00081-4/fulltext"}, {"title": "Decoding fibrosis: Transcriptomic and clinical insights via AI-derived collagen deposition phenotypes in MASLD", "authors": "", "journal": "Hepatology", "date": "", "preprint": false, "review": false, "tier": "key", "url": "https://www.ovid.com/jnls/hep/fulltext/10.1097/hep.0000000000001811~decoding-fibrosis-transcriptomic-and-clinical-insights-via"}]}, {"label": "GDF15", "window_days": 30, "key_only": false, "items": [{"title": "GDF-15/GFRAL Axis Dynamics and Vulnerability Windows in Bariatric Surgery: Pathophysiological, Microbiomic, and Pharmacological Perspectives", "authors": "", "journal": "Cells", "date": "", "preprint": false, "review": true, "tier": null, "url": "https://doi.org/10.3390/cells15191823"}, {"title": "GDF15 Improves Renal Injury Induced by Ectopic Lipid Deposition via AMPK/SIRT1 Pathway-Mediated Autophagy", "authors": "", "journal": "Metabolites", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://doi.org/10.3390/metabo16050336"}, {"title": "GDF15: A Novel Insight Into Its Biology and Therapeutic Potential in Obesity", "authors": "", "journal": "", "date": "", "preprint": false, "review": true, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/42485157/"}, {"title": "Blockade of the GDF15/GFRAL Axis: Translational Advances in Cachexia, Immune Suppression, and Beyond", "authors": "", "journal": "", "date": "", "preprint": false, "review": true, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/42439330/"}, {"title": "Association between elevated expression of GDF15/GFRAL and sarcopenia risk", "authors": "", "journal": "", "date": "", "preprint": false, "review": false, "tier": null, "url": "https://pubmed.ncbi.nlm.nih.gov/41797911/"}]}, {"label": "Murine models", "window_days": 21, "key_only": true, "items": [{"title": "Adipose Tissue Palmitoylation Cycling Mediates Insulin Resistance and Preservation of β-Cell Function in Mice", "authors": "Dong G et al.", "journal": "Diabetes", "date": "2026-10-01", "preprint": false, "review": false, "tier": "key", "url": "https://doi.org/10.2337/db26-0023"}, {"title": "Multi-organ proteomic atlas of obesity regression in male mice", "authors": "", "journal": "Nat Metab", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.nature.com/articles/s42255-026-01599-5"}]}, {"label": "Clinical trials & epidemiology", "window_days": 30, "key_only": true, "items": [{"title": "Retatrutide in adults with obesity and type 2 diabetes (TRIUMPH-2): a double-blind, parallel-group, randomised, placebo-controlled, phase 3 trial", "authors": "", "journal": "Lancet", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)01861-1/abstract"}, {"title": "Efficacy and safety of retatrutide, a GIP, GLP-1, and glucagon receptor agonist, in people with type 2 diabetes and inadequate glycaemic control with diet and exercise (TRANSCEND-T2D-1): a double-blind, randomised, phase 3 trial", "authors": "", "journal": "Lancet", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)00967-0/abstract"}, {"title": "Cagrilintide–semaglutide (CagriSema) versus semaglutide or cagrilintide in people with type 2 diabetes (REIMAGINE 2): a double-blind, randomised, controlled, phase 3 study", "authors": "", "journal": "Lancet Diabetes Endocrinol", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/landia/article/PIIS2213-8587(26)00125-7/abstract"}, {"title": "Continuous glucose monitoring versus self-monitoring of blood glucose in individuals with type 2 diabetes: a randomised, multicentre, open-label, superiority trial", "authors": "", "journal": "Lancet Diabetes Endocrinol", "date": "", "preprint": false, "review": false, "tier": "top", "url": "https://www.thelancet.com/journals/landia/article/PIIS2213-8587(26)00076-8/fulltext"}]}]}], "news": [{"label": "Nature", "items": [{"title": "Briefing Chat: An invisible tattoo that appears under UV light – and then disappears", "url": "https://www.nature.com/articles/d41586-026-03341-3", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "The pianist who never played", "url": "https://www.nature.com/articles/d41586-026-03112-0", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "IceCube just won a Nobel prize. Protect astroparticle physics projects with the same potential", "url": "https://www.nature.com/articles/d41586-026-03308-4", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "Memory stays strong in old age when this brain enzyme is active", "url": "https://www.nature.com/articles/d41586-026-03303-9", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "Unprecedented atlas explores mitochondria across the tree of life", "url": "https://www.nature.com/articles/d41586-026-03195-9", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "PhD students who write dissertation with AI less likely to stay in academia", "url": "https://www.nature.com/articles/d41586-026-03253-2", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "History’s long-secret codes are being cracked by amateurs using AI", "url": "https://www.nature.com/articles/d41586-026-03338-y", "source": "Nature", "date": "2026-10-16", "image": ""}, {"title": "Is AI eroding PhD students’ critical thinking and analysis skills?", "url": "https://www.nature.com/articles/d41586-026-03178-w", "source": "Nature", "date": "2026-10-15", "image": ""}, {"title": "World’s timekeepers upend how they adjust time to avoid catastrophic ‘negative second’", "url": "https://www.nature.com/articles/d41586-026-03329-z", "source": "Nature", "date": "2026-10-15", "image": ""}, {"title": "Orangutan mothers arrange play dates for their babies", "url": "https://www.nature.com/articles/d41586-026-03238-1", "source": "Nature", "date": "2026-10-15", "image": ""}], "logo": "https://www.nature.com/uploads/product/nature/rss.png"}, {"label": "Science", "error": "not fetched for this example", "items": [], "logo": ""}, {"label": "eLife Magazine", "items": [{"title": "The cow udder as an influenza mixing ground", "url": "https://elifesciences.org/articles/113101", "source": "eLife Magazine", "date": "2026-10-15", "image": ""}, {"title": "Lifestyle, Environment and Epigenetic Inheritance: A Collection of Articles", "url": "https://elifesciences.org/collections/1d2aeef4", "source": "eLife Magazine", "date": "2026-09-30", "image": "https://iiif.elifesciences.org/journal-cms/collection%2F2026-09%2Fscreenshot-2026-09-08-at-18.27.07.png/full/800,/0/default.jpg"}, {"title": "Episode 105: September 2026", "url": "https://elifesciences.org/podcast/episode105", "source": "eLife Magazine", "date": "2026-09-23", "image": "https://iiif.elifesciences.org/journal-cms/podcast_episode%2F2026-09%2Fanastasiya-badun-2wdxccw83hm-unsplash.jpg/full/800,/0/default.jpg"}, {"title": "How experience shapes individuality", "url": "https://elifesciences.org/articles/112851", "source": "eLife Magazine", "date": "2026-09-11", "image": ""}, {"title": "How monkeys carve up the visual world", "url": "https://elifesciences.org/articles/112456", "source": "eLife Magazine", "date": "2026-08-17", "image": ""}], "logo": ""}, {"label": "Retraction Watch", "items": [{"title": "Weekend reads: Computer science conferences impose caps; Lancet strikes to continue; Is this the ‘mathocalypse’?", "url": "https://retractionwatch.com/2026/10/17/weekend-reads-computer-science-conferences-impose-caps-lancet-strikes-continue-mathocalypse/", "source": "Retraction Watch", "date": "2026-10-17", "image": "https://retractionwatch.com/wp-content/uploads/2024/01/rw-1024x768.jpeg"}, {"title": "‘Springer’ agency website offering authorship for sale goes down following Retraction Watch story", "url": "https://retractionwatch.com/2026/10/16/springer-agency-website-offering-authorship-for-sale-goes-down-following-retraction-watch-story/", "source": "Retraction Watch", "date": "2026-10-16", "image": "https://retractionwatch.com/wp-content/uploads/2026/10/SJO_-1024x552.jpg"}, {"title": "Journal retracts, republishes paper on Long COVID treatment trial", "url": "https://retractionwatch.com/2026/10/15/journal-retracts-republishes-paper-on-long-covid-treatment-trial/", "source": "Retraction Watch", "date": "2026-10-15", "image": "https://retractionwatch.com/wp-content/uploads/2026/10/annals-internal-medicine.png"}, {"title": "Paper touted by MD Anderson gets expression of concern for data ‘concerns’", "url": "https://retractionwatch.com/2026/10/14/science-translational-medicine-md-anderson-expression-of-concern-data-concerns-china/", "source": "Retraction Watch", "date": "2026-10-14", "image": "https://retractionwatch.com/wp-content/uploads/2026/10/ihc-stain-acbp-protein-bone-mets-breast-cancer-1024x576.jpg"}, {"title": "Former Crick Ph.D. student loses COVID vaccine paper for fabrication", "url": "https://retractionwatch.com/2026/10/14/former-crick-ph-d-student-loses-covid-vaccine-paper-for-fabrication/", "source": "Retraction Watch", "date": "2026-10-14", "image": ""}, {"title": "Authors respond with ‘a bit like a threat’ after journal reveals postdoc’s identity", "url": "https://retractionwatch.com/2026/10/13/physics-of-fluids-aip-publishing-authors-respond-journal-postdoc-identity/", "source": "Retraction Watch", "date": "2026-10-13", "image": ""}, {"title": "A company named Springer that isn’t the publisher is offering authorship for sale", "url": "https://retractionwatch.com/2026/10/12/springer-journals-online-authorship-for-sale/", "source": "Retraction Watch", "date": "2026-10-12", "image": ""}, {"title": "Weekend reads: OpenAI’s preprint dump; Taylor & Francis to leave Informa; arXiv’s preprint cap", "url": "https://retractionwatch.com/2026/10/10/weekend-reads-openais-preprint-dump-taylor-francis-to-leave-informa-arxivs-preprint-cap/", "source": "Retraction Watch", "date": "2026-10-10", "image": ""}], "logo": "https://retractionwatch.com/wp-content/uploads/2018/02/retractionwatch31-150x150.jpg"}], "group_pubs": {"example": true, "latest": {"title": "Proteomic profiling of liver and plasma uncovers biomarkers and mechanisms in patients with primary biliary cholangitis", "authors": "Jesper Sloth Kellemann, Anne-Sofie Houlberg Jensen, Annelaura Bach Nielsen, …, Nicolai J. Wewer Albrechtsen", "journal": "Communications Medicine", "date": "2026-10-01", "url": "https://doi.org/10.1038/s43856-026-01924-9", "sources": ["OpenAlex"]}, "per_year": [{"year": 2019, "n": 14}, {"year": 2020, "n": 22}, {"year": 2021, "n": 25}, {"year": 2022, "n": 27}, {"year": 2023, "n": 24}, {"year": 2024, "n": 30}, {"year": 2025, "n": 28}, {"year": 2026, "n": 21}]}, "daily": {"target": {"gene": "GLP1R", "protein": "Glucagon-like peptide 1 receptor", "accession": "P43220", "function": "G-protein coupled receptor for glucagon-like peptide 1 (GLP-1). Ligand binding activates adenylyl cyclase and raises intracellular cAMP; it regulates insulin secretion in response to GLP-1.", "drugs": ["Semaglutide", "Liraglutide", "Dulaglutide", "Exenatide", "Lixisenatide", "Tirzepatide"], "n_drugs": 6, "mechanism": "Glucagon-like peptide 1 receptor agonist", "indications": ["Diabetes Mellitus, Type 2", "Obesity"], "links": {"UniProt": "https://www.uniprot.org/uniprotkb/P43220/entry", "Open Targets": "https://platform.opentargets.org/search?q=GLP1R", "Protein Atlas": "https://www.proteinatlas.org/search/GLP1R"}, "source": "example"}, "owid": {"title": "How many people in the world identify with a particular religion?", "url": "https://ourworldindata.org/data-insights/how-many-people-in-the-world-identify-with-a-particular-religion", "date": "2026-10-17", "image": "https://ourworldindata.org/cdn-cgi/imagedelivery/qLq-8BTgXU8yG0N6HnOy8g/357f0983-b080-48f7-da0a-a20b6d7a3b00/w=1350", "text": ""}, "motm": {"title": "Celebrating 55 Years of the PDB", "url": "https://pdb101.rcsb.org/motm/322", "date": "2026-10-01", "text": "Enabling the rapid evolution of protein structure prediction and design", "image": "https://cdn.rcsb.org/pdb101/motm/322/orf8.png"}, "spotlight_enabled": true, "target_enabled": false, "spotlight": {"title": "Fuel", "url": "https://www.proteinspotlight.org/spotlight/back_issues/295/", "date": "2026-10", "issue": "295", "image": "https://www.proteinspotlight.org/spotlight/images/sptlt295.jpg", "text": "We need fat. Organisms from bacteria to humans need some form of fuel for every action, conscious or not.", "proteins": [{"accession": "Q8R400", "name": "Adipogenin", "organism": "Mouse", "url": "https://www.uniprot.org/uniprotkb/Q8R400/entry"}, {"accession": "Q9Z2E9", "name": "Seipin", "organism": "Mouse", "url": "https://www.uniprot.org/uniprotkb/Q9Z2E9/entry"}]}}, "status": [{"name": "Papers (example items from a web search, not a live query)", "ok": false, "error": "Europe PMC was rate-limited when this example was made"}, {"name": "News · Nature", "ok": true, "count": 10}, {"name": "News · Science", "ok": false, "error": "not fetched for this example"}, {"name": "News · eLife Magazine", "ok": true, "count": 5}, {"name": "News · Retraction Watch", "ok": true, "count": 8}, {"name": "Group publications", "ok": false, "error": "no ORCIDs in config.yml, showing example"}, {"name": "Protein Spotlight", "ok": true, "count": 1}, {"name": "Our World in Data", "ok": true, "count": 1}, {"name": "PDB Molecule of the Month", "ok": true, "count": 1}], "sample": true};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const DAY = 86400000;
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const parseDay = (s) => { const d = new Date(String(s).slice(0, 10) + "T00:00:00"); return isNaN(d) ? null : d; };
+const fmtDate = (s) => {
+  s = String(s || "");
+  if (/^\d{4}-\d{2}$/.test(s)) return new Date(s + "-01T00:00:00").toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+  const d = parseDay(s); return d ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "";
+};
+const ago = (s) => {
+  const d = s && s.length >= 10 ? parseDay(s) : null; if (!d) return "";
+  const n = Math.round((today - d) / DAY);
+  return n <= 0 ? "today" : n === 1 ? "yesterday" : n + "d ago";
+};
+const exTag = (on) => on ? '<span class="example" title="Example data. Add your group\'s ORCIDs in config.yml.">example</span>' : "";
+const imgTag = (src, alt) => src
+  ? `<img class="daily-img" src="${esc(src)}" alt="${esc(alt)}" loading="lazy" onerror="this.outerHTML='<div class=&quot;img-missing&quot;>Image could not be loaded here. Open the full item to see it.</div>'">`
+  : "";
+
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day);
+  return Math.ceil(((t - new Date(Date.UTC(t.getUTCFullYear(), 0, 1))) / DAY + 1) / 7);
+}
+
+/* ---------- Header ---------- */
+function header() {
+  $("group-name").textContent = DASH.group.name;
+  $("group-sub").textContent = DASH.group.subtitle || "";
+  $("eyebrow").textContent = `Week ${isoWeek(today)} · ${today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`;
+  const q = $("q");
+  const upd = () => {
+    const raw = q.value.trim(), v = encodeURIComponent(raw);
+    $("q-pubmed").href = raw ? `https://pubmed.ncbi.nlm.nih.gov/?term=${v}&sort=date` : "https://pubmed.ncbi.nlm.nih.gov/";
+    $("q-uniprot").href = raw ? `https://www.uniprot.org/uniprotkb?query=${v}+AND+organism_id:9606` : "https://www.uniprot.org/";
+    $("q-ot").href = raw ? `https://platform.opentargets.org/search?q=${v}` : "https://platform.opentargets.org/";
+  };
+  q.addEventListener("input", upd);
+  q.addEventListener("keydown", (e) => { if (e.key === "Enter") $("q-pubmed").click(); });
+}
+
+/* ---------- Left column ---------- */
+function latest() {
+  const g = DASH.group_pubs || {}, p = g.latest;
+  $("latest-ex").innerHTML = exTag(g.example);
+  if (!p) { $("latest").innerHTML = '<p class="empty">No publications found. Check the ORCIDs in config.yml.</p>'; return; }
+  $("latest").innerHTML = `
+    <a class="title" href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+    ${p.authors ? `<div class="who">${esc(p.authors)}</div>` : ""}
+    <div class="where"><span class="j">${esc(p.journal)}</span><span>${fmtDate(p.date)}</span></div>
+    ${p.sources && p.sources.length ? `<div class="found">Found in ${esc(p.sources.join(" and "))}${
+      !p.sources.includes("PubMed") ? " · not yet in PubMed" : ""}</div>` : ""}
+    <a class="go" href="${esc(p.url)}" target="_blank" rel="noopener">Read the paper ↗</a>`;
+}
+
+function chart() {
+  const g = DASH.group_pubs || {}, rows = g.per_year || [];
+  $("chart-ex").innerHTML = exTag(g.example);
+  if (!rows.length) { $("chart").innerHTML = '<p class="empty">No data yet.</p>'; return; }
+  const W = 260, H = 140, L = 24, B = 20, T = 14;
+  const max = Math.max(1, ...rows.map((r) => r.n));
+  const step = max <= 6 ? 2 : max <= 15 ? 5 : 10;
+  const top = Math.ceil(max / step) * step;
+  const y = (v) => T + (H - T - B) * (1 - v / top);
+  const bw = (W - L) / rows.length, thisYear = String(today.getFullYear());
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Group publications per year">`;
+  for (let v = 0; v <= top; v += step) s += `<line class="grid" x1="${L}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text class="axis" x="${L - 5}" y="${y(v) + 3}" text-anchor="end">${v}</text>`;
+  rows.forEach((r, i) => {
+    const x = L + i * bw + bw * 0.18, w = bw * 0.64, cur = String(r.year) === thisYear;
+    s += `<rect class="bar${cur ? " now" : ""}" x="${x}" y="${y(r.n)}" width="${w}" height="${Math.max(0, y(0) - y(r.n))}" rx="1.5"><title>${r.year}: ${r.n}${cur ? " (so far)" : ""}</title></rect>`;
+    if (cur || r.n === max) s += `<text class="val" x="${x + w / 2}" y="${y(r.n) - 4}" text-anchor="middle">${r.n}</text>`;
+    s += `<text class="axis" x="${x + w / 2}" y="${H - 6}" text-anchor="middle">'${String(r.year).slice(2)}</text>`;
+  });
+  $("chart").innerHTML = s + "</svg>";
+}
+
+function links() {
+  $("links").innerHTML = (DASH.links || []).map((grp) =>
+    `<div class="link-group">${esc(grp.group)}</div>` +
+    grp.items.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}<span>${esc(l.note || "")}</span></a>`).join("")
+  ).join("");
+}
+
+/* ---------- Middle column ---------- */
+const FILTERS = [
+  { id: "all", label: "All", test: () => true },
+  { id: "pre", label: "Preprints", test: (p) => p.preprint },
+  { id: "rev", label: "Reviews", test: (p) => p.review },
+  { id: "key", label: "Key journals", test: (p) => !!p.tier },
+];
+
+const paperItem = (p) => `<li>
+  <a class="item-title" href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>
+  <div class="meta">
+    ${p.preprint ? '<span class="tag pre">Preprint</span>' : ""}${p.review ? '<span class="tag rev">Review</span>' : ""}${p.tier === "top" ? '<span class="tag top">Top tier</span>' : ""}
+    ${p.journal ? `<span class="journal${p.tier ? " key" : ""}">${esc(p.journal)}</span>` : ""}
+    ${p.authors ? `<span>${esc(p.authors)}</span>` : ""}${ago(p.date) ? `<span>${ago(p.date)}</span>` : ""}
+  </div></li>`;
+
+/* Thumbnail: the item's own image -> the feed's logo -> the source name */
+const thumb = (n, tab) => {
+  const label = esc(n.source), logo = esc((tab && tab.logo) || "");
+  if (n.image) return `<img class="th-img" src="${esc(n.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" data-logo="${logo}" data-label="${label}">`;
+  if (logo) return `<img class="th-logo" src="${logo}" alt="${label}" loading="lazy" referrerpolicy="no-referrer" data-label="${label}">`;
+  return `<span class="th-text">${label}</span>`;
+};
+function wireThumbs(root) {
+  root.querySelectorAll(".thumb img").forEach((img) => img.addEventListener("error", () => {
+    if (img.classList.contains("th-img") && img.dataset.logo) {
+      img.className = "th-logo"; img.alt = img.dataset.label; img.src = img.dataset.logo;
+    } else {
+      const s = document.createElement("span"); s.className = "th-text"; s.textContent = img.dataset.label; img.replaceWith(s);
+    }
+  }));
+}
+
+const newsItem = (n, tab) => `<li class="news">
+  <a class="thumb" href="${esc(n.url)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${thumb(n, tab)}</a>
+  <div><a class="item-title" href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a>
+  <div class="meta"><span>${esc(n.source)}</span>${ago(n.date) ? `<span>${ago(n.date)}</span>` : ""}</div></div></li>`;
+
+function tabbedWidget(id, kicker, source, title, tabs, opts) {
+  const el = document.createElement("div");
+  el.className = "widget"; el.id = id;
+  $("mid").appendChild(el);
+  const st = { tab: 0, filter: "all", expanded: false };
+  const per = opts.per || 4;
+  const draw = () => {
+    const t = tabs[st.tab] || { items: [] };
+    const all = t.items || [];
+    const f = FILTERS.find((x) => x.id === st.filter) || FILTERS[0];
+    const items = opts.filters ? all.filter(f.test) : all;
+    const shown = st.expanded ? items : items.slice(0, per);
+    const scope = opts.filters ? `${t.key_only ? "key & top-tier journals" : "all journals & preprints"} · ${t.window_days || ""} days` : "";
+    el.innerHTML = `
+      <div class="w-head"><span class="kicker"><span>${esc(kicker)}</span><span class="src">${esc(source)}</span></span><h2 class="w-title">${esc(title)}</h2></div>
+      <div class="card">
+        <div class="tabs" role="tablist" aria-label="${esc(title)}">${tabs.map((x, i) =>
+          `<button class="tab" role="tab" aria-selected="${i === st.tab}" data-i="${i}">${esc(x.label)}<span class="n">${(x.items || []).length}</span></button>`).join("")}</div>
+        ${opts.filters ? `<div class="filters">${FILTERS.map((x) =>
+          `<button class="chip" aria-pressed="${x.id === st.filter}" data-f="${x.id}">${x.label}<span class="n">${all.filter(x.test).length}</span></button>`).join("")}
+          <span class="scope">${esc(scope)}</span></div>` : ""}
+        ${t.error ? `<p class="empty">This source could not be read on the last update (${esc(t.error)}).</p>` : ""}
+        ${items.length ? `<ul class="list">${shown.map((x) => opts.item(x, t)).join("")}</ul>`
+          : (t.error ? "" : `<p class="empty">${all.length ? "Nothing matches this filter." : "Nothing new in this window."}</p>`)}
+        ${items.length > per ? `<button class="more">${st.expanded ? "Show fewer" : `Show all ${items.length}`}</button>` : ""}
+      </div>`;
+    el.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => { st.tab = +b.dataset.i; st.expanded = false; draw(); }));
+    el.querySelectorAll(".chip").forEach((b) => b.addEventListener("click", () => { st.filter = b.dataset.f; st.expanded = false; draw(); }));
+    const m = el.querySelector(".more"); if (m) m.addEventListener("click", () => { st.expanded = !st.expanded; draw(); });
+    wireThumbs(el);
+  };
+  draw();
+}
+
+/* ---------- Right column ---------- */
+function spotlight() {
+  const d = DASH.daily || {}, s = d.spotlight;
+  $("spotlight-w").hidden = !(d.spotlight_enabled || s);
+  if (!s) { $("spotlight").innerHTML = '<p class="empty">Not available this month.</p>'; return; }
+  const prots = (s.proteins || []).map((p) =>
+    `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.name)}${p.organism ? ` <span>(${esc(p.organism)})</span>` : ""} ↗</a>`).join("");
+  $("spotlight").innerHTML = `
+    ${s.image ? `<a href="${esc(s.url)}" target="_blank" rel="noopener"><img class="daily-img" src="${esc(s.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></a>` : ""}
+    <h3><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></h3>
+    ${s.text ? `<p>${esc(s.text)}</p>` : ""}
+    ${prots ? `<div class="prots"><span class="lbl">Featured proteins</span>${prots}</div>` : ""}
+    <div class="src">${s.issue ? `<span>Issue ${esc(s.issue)}</span>` : ""}<span>${fmtDate(s.date)}</span><a href="${esc(s.url)}" target="_blank" rel="noopener">Read the article ↗</a></div>`;
+}
+
+function target() {
+  const d = DASH.daily || {};
+  $("target-w").hidden = d.target_enabled === false;
+  const t = d.target;
+  if (!t) { $("target").innerHTML = '<p class="empty">Not available today.</p>'; return; }
+  $("target-note").textContent = t.source && t.source !== "example" ? t.source.replace(" approved drugs", "") : "";
+  const drugs = t.drugs || [];
+  const drugText = drugs.length ? drugs.slice(0, 3).join(", ") + (drugs.length > 3 ? ` +${drugs.length - 3} more` : "") : "";
+  const why = t.n_drugs
+    ? `<div class="why">Target of <b>${t.n_drugs} approved drug${t.n_drugs === 1 ? "" : "s"}</b>${drugText ? `, e.g. ${esc(drugText)}` : ""}.
+       ${t.mechanism ? `<br>Mechanism: ${esc(t.mechanism)}.` : ""}
+       ${t.indications && t.indications.length ? `<br>Used for: ${esc(t.indications.join(", "))}.` : ""}</div>`
+    : "";
+  $("target").innerHTML = `
+    <div class="sym">${esc(t.gene)}</div>
+    <div class="pname">${esc(t.protein)}</div>
+    ${why}
+    ${t.function ? `<p>${esc(t.function)}</p>` : ""}
+    <div class="src">${Object.entries(t.links || {}).map(([k, v]) => `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(k)} ↗</a>`).join("")}</div>`;
+}
+
+function owid() {
+  const o = (DASH.daily || {}).owid;
+  if (!o) { $("owid").innerHTML = '<p class="empty">Not available today.</p>'; return; }
+  $("owid").innerHTML = `
+    <a href="${esc(o.url)}" target="_blank" rel="noopener">${imgTag(o.image, o.title)}</a>
+    <h3><a href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.title)}</a></h3>
+    ${o.text ? `<p>${esc(o.text)}</p>` : ""}
+    <div class="src"><span>${fmtDate(o.date)}</span><a href="${esc(o.url)}" target="_blank" rel="noopener">Read the insight ↗</a></div>`;
+}
+
+function motm() {
+  const m = (DASH.daily || {}).motm;
+  if (!m) { $("motm").innerHTML = '<p class="empty">Not available this month.</p>'; return; }
+  $("motm").innerHTML = `
+    <a href="${esc(m.url)}" target="_blank" rel="noopener">${imgTag(m.image, m.title)}</a>
+    <h3><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.title)}</a></h3>
+    ${m.text ? `<p>${esc(m.text)}</p>` : ""}
+    <div class="src"><span>${fmtDate(m.date)}</span><a href="${esc(m.url)}" target="_blank" rel="noopener">Read the article ↗</a></div>`;
+}
+
+/* ---------- Footer ---------- */
+function footer() {
+  const st = DASH.status || [];
+  const bad = st.filter((s) => !s.ok);
+  const updated = new Date(DASH.generated).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  $("footer").innerHTML = `
+    <details>
+      <summary><span class="dot${bad.length ? " bad" : ""}"></span>
+        ${bad.length ? `${bad.length} of ${st.length} sources had problems` : `All ${st.length} sources updated`} · updated ${esc(updated)}${DASH.sample ? " · example data" : ""} · show details</summary>
+      <ul class="status">${st.map((s) => `<li><span class="dot${s.ok ? "" : " bad"}"></span><span>${esc(s.name)} <span class="why">· ${s.ok ? `${s.count} items` : esc(s.error)}</span></span></li>`).join("")}</ul>
+    </details>
+    <span>Rebuilt daily by GitHub Actions · data from Europe PMC, RSS feeds, ChEMBL, UniProt, Our World in Data and RCSB PDB-101</span>`;
+}
+
+if (DASH) {
+  header(); latest(); chart(); links();
+  tabbedWidget("news", "News", "RSS", "Science & research news", DASH.news || [], { filters: false, item: newsItem, per: 4 });
+  (DASH.paper_widgets || []).forEach((w, i) => tabbedWidget(`papers-${i}`, "New papers", "Europe PMC", w.title, w.tabs, { filters: true, item: paperItem, per: 4 }));
+  spotlight(); target(); owid(); motm(); footer();
+}
+</script>
+
+</body>
+</html>

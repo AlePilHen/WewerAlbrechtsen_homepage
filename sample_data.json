@@ -1,0 +1,794 @@
+{
+ "paper_widgets": [
+  {
+   "title": "Biomarkers & proteomics",
+   "tabs": [
+    {
+     "label": "Plasma proteomics",
+     "window_days": 21,
+     "key_only": false,
+     "items": [
+      {
+       "title": "Cardiometabolic Protein Profile Changes During Gender-Affirming Hormone Therapy: A Prospective Clinical Study",
+       "authors": "Madsen EB et al.",
+       "journal": "Clin Endocrinol (Oxf)",
+       "date": "2026-10-08",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://doi.org/10.1111/cen.70209"
+      },
+      {
+       "title": "Data-Driven Cluster Subtyping and Its Association With Cardiometabolic Disease Progression: Integrating Multi-State…",
+       "authors": "Huang Y et al.",
+       "journal": "Diabetes Obes Metab",
+       "date": "2026-10-06",
+       "preprint": false,
+       "review": false,
+       "tier": "key",
+       "url": "https://doi.org/10.1111/dom.71423"
+      },
+      {
+       "title": "Integrated proteomics and metabolomics for predicting cardiometabolic risk in pregnant women living with HIV: current evidence…",
+       "authors": "Eke AC et al.",
+       "journal": "Expert Rev Mol Diagn",
+       "date": "2026-10-05",
+       "preprint": false,
+       "review": true,
+       "tier": null,
+       "url": "https://doi.org/10.1080/14737159.2026.2741065"
+      },
+      {
+       "title": "Glycation proteomics identifies creatine kinase as a mediator of the effects of methylglyoxal on mitochondrial…",
+       "authors": "Lake RF et al.",
+       "journal": "bioRxiv",
+       "date": "2026-10-02",
+       "preprint": true,
+       "review": false,
+       "tier": null,
+       "url": "https://doi.org/10.64898/2026.10.01.756032"
+      },
+      {
+       "title": "Proteome analysis of different tissues in pregnant women with gestational diabetes and type 1 diabetes mellitus",
+       "authors": "Cantürk Z et al.",
+       "journal": "J Mol Endocrinol",
+       "date": "2026-10-01",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://doi.org/10.1530/jme-26-0064"
+      },
+      {
+       "title": "Plasma proteomics framework predicts metabolic dysfunction-associated steatotic liver disease up to 16 years before onset",
+       "authors": "",
+       "journal": "Nat Aging",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://www.nature.com/articles/s43587-026-01183-2"
+      },
+      {
+       "title": "Integrated serum proteomic and liver genomic analyses identify molecular signatures associated with metabolic dysfunction-associated steatotic liver disease: a multi-cohort study",
+       "authors": "",
+       "journal": "BMC Med",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://link.springer.com/article/10.1186/s12916-026-04834-8"
+      },
+      {
+       "title": "Multi-organ proteomic atlas of obesity regression in male mice",
+       "authors": "",
+       "journal": "Nat Metab",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.nature.com/articles/s42255-026-01599-5"
+      }
+     ]
+    },
+    {
+     "label": "Liver disease biomarkers",
+     "window_days": 21,
+     "key_only": false,
+     "items": [
+      {
+       "title": "Plasma proteomics framework predicts metabolic dysfunction-associated steatotic liver disease up to 16 years before onset",
+       "authors": "",
+       "journal": "Nat Aging",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://www.nature.com/articles/s43587-026-01183-2"
+      },
+      {
+       "title": "Integrated serum proteomic and liver genomic analyses identify molecular signatures associated with metabolic dysfunction-associated steatotic liver disease: a multi-cohort study",
+       "authors": "",
+       "journal": "BMC Med",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://link.springer.com/article/10.1186/s12916-026-04834-8"
+      },
+      {
+       "title": "Large-scale plasma proteomics improves prediction of heart failure among MASLD individuals: A prospective cohort study",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://www.sciencedirect.com/science/article/pii/S2666667726002370"
+      },
+      {
+       "title": "Decoding fibrosis: Transcriptomic and clinical insights via AI-derived collagen deposition phenotypes in MASLD",
+       "authors": "",
+       "journal": "Hepatology",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "key",
+       "url": "https://www.ovid.com/jnls/hep/fulltext/10.1097/hep.0000000000001811~decoding-fibrosis-transcriptomic-and-clinical-insights-via"
+      },
+      {
+       "title": "Lipidomics and proteomics in MASLD: reading the molecular script toward precision therapeutics",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": true,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/42461367/"
+      }
+     ]
+    },
+    {
+     "label": "Hormone assays & methods",
+     "window_days": 21,
+     "key_only": false,
+     "items": [
+      {
+       "title": "Interlaboratory Comparison of a Glucagon and Oxyntomodulin Immuno-LC-MS/MS Assay: Implications for Diabetes Research",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/42400596/"
+      },
+      {
+       "title": "Development and validation of a sensitive HPLC-MS/MS method for the analysis of semaglutide in human plasma",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13540083/"
+      },
+      {
+       "title": "Development and Validation of a Liquid Chromatography/Tandem Mass Spectrometry Method for the Quantification of the GLP-1 Analog Semaglutide in Rat Plasma, and Its Application in a Pharmacokinetic Study",
+       "authors": "",
+       "journal": "Pharmaceutics",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://doi.org/10.3390/pharmaceutics18070770"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Metabolism & treatment",
+   "tabs": [
+    {
+     "label": "Glucagon & liver–alpha cell axis",
+     "window_days": 21,
+     "key_only": false,
+     "items": [
+      {
+       "title": "Acute glucagon infusion induces natriuresis and diuresis through a direct tubular mechanism involving overlapping receptor pathways",
+       "authors": "",
+       "journal": "Am J Physiol Renal Physiol",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://doi.org/10.1152/ajprenal.00195.2026"
+      },
+      {
+       "title": "Pancreatic α-cells integrate immune and neuronal stimuli for insulin secretion",
+       "authors": "",
+       "journal": "Cell Rep",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://www.cell.com/cell-reports/fulltext/S2211-1247(26)00664-9"
+      },
+      {
+       "title": "Paracrine inhibition via G protein inwardly rectifying potassium channels regulates glucagon secretion from human pancreatic alpha cells",
+       "authors": "",
+       "journal": "Cell Rep",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://www.cell.com/cell-reports/fulltext/S2211-1247(26)00146-4"
+      },
+      {
+       "title": "Alpha cell dysfunction in type 2 diabetes: associations with insulin resistance and reduced insulin secretion",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/42379653/"
+      },
+      {
+       "title": "Glucagon, the Alpha Cell, and Potential Targets for Diabetes Treatment",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": true,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/41206016/"
+      }
+     ]
+    },
+    {
+     "label": "Incretin & multi-agonist drugs",
+     "window_days": 21,
+     "key_only": true,
+     "items": [
+      {
+       "title": "Retatrutide in adults with obesity and type 2 diabetes (TRIUMPH-2): a double-blind, parallel-group, randomised, placebo-controlled, phase 3 trial",
+       "authors": "",
+       "journal": "Lancet",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)01861-1/abstract"
+      },
+      {
+       "title": "Cagrilintide–semaglutide (CagriSema) versus semaglutide or cagrilintide in people with type 2 diabetes (REIMAGINE 2): a double-blind, randomised, controlled, phase 3 study",
+       "authors": "",
+       "journal": "Lancet Diabetes Endocrinol",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/landia/article/PIIS2213-8587(26)00125-7/abstract"
+      },
+      {
+       "title": "Efficacy and safety of retatrutide, a GIP, GLP-1, and glucagon receptor agonist, in people with type 2 diabetes and inadequate glycaemic control with diet and exercise (TRANSCEND-T2D-1): a double-blind, randomised, phase 3 trial",
+       "authors": "",
+       "journal": "Lancet",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)00967-0/abstract"
+      }
+     ]
+    },
+    {
+     "label": "MASLD/MASH",
+     "window_days": 21,
+     "key_only": true,
+     "items": [
+      {
+       "title": "Update in clinical science: MASLD in children and adolescents",
+       "authors": "",
+       "journal": "J Hepatol",
+       "date": "",
+       "preprint": false,
+       "review": true,
+       "tier": "key",
+       "url": "https://www.journal-of-hepatology.eu/article/S0168-8278(26)00081-4/fulltext"
+      },
+      {
+       "title": "Decoding fibrosis: Transcriptomic and clinical insights via AI-derived collagen deposition phenotypes in MASLD",
+       "authors": "",
+       "journal": "Hepatology",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "key",
+       "url": "https://www.ovid.com/jnls/hep/fulltext/10.1097/hep.0000000000001811~decoding-fibrosis-transcriptomic-and-clinical-insights-via"
+      }
+     ]
+    },
+    {
+     "label": "GDF15",
+     "window_days": 30,
+     "key_only": false,
+     "items": [
+      {
+       "title": "GDF-15/GFRAL Axis Dynamics and Vulnerability Windows in Bariatric Surgery: Pathophysiological, Microbiomic, and Pharmacological Perspectives",
+       "authors": "",
+       "journal": "Cells",
+       "date": "",
+       "preprint": false,
+       "review": true,
+       "tier": null,
+       "url": "https://doi.org/10.3390/cells15191823"
+      },
+      {
+       "title": "GDF15 Improves Renal Injury Induced by Ectopic Lipid Deposition via AMPK/SIRT1 Pathway-Mediated Autophagy",
+       "authors": "",
+       "journal": "Metabolites",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://doi.org/10.3390/metabo16050336"
+      },
+      {
+       "title": "GDF15: A Novel Insight Into Its Biology and Therapeutic Potential in Obesity",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": true,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/42485157/"
+      },
+      {
+       "title": "Blockade of the GDF15/GFRAL Axis: Translational Advances in Cachexia, Immune Suppression, and Beyond",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": true,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/42439330/"
+      },
+      {
+       "title": "Association between elevated expression of GDF15/GFRAL and sarcopenia risk",
+       "authors": "",
+       "journal": "",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": null,
+       "url": "https://pubmed.ncbi.nlm.nih.gov/41797911/"
+      }
+     ]
+    },
+    {
+     "label": "Murine models",
+     "window_days": 21,
+     "key_only": true,
+     "items": [
+      {
+       "title": "Adipose Tissue Palmitoylation Cycling Mediates Insulin Resistance and Preservation of β-Cell Function in Mice",
+       "authors": "Dong G et al.",
+       "journal": "Diabetes",
+       "date": "2026-10-01",
+       "preprint": false,
+       "review": false,
+       "tier": "key",
+       "url": "https://doi.org/10.2337/db26-0023"
+      },
+      {
+       "title": "Multi-organ proteomic atlas of obesity regression in male mice",
+       "authors": "",
+       "journal": "Nat Metab",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.nature.com/articles/s42255-026-01599-5"
+      }
+     ]
+    },
+    {
+     "label": "Clinical trials & epidemiology",
+     "window_days": 30,
+     "key_only": true,
+     "items": [
+      {
+       "title": "Retatrutide in adults with obesity and type 2 diabetes (TRIUMPH-2): a double-blind, parallel-group, randomised, placebo-controlled, phase 3 trial",
+       "authors": "",
+       "journal": "Lancet",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)01861-1/abstract"
+      },
+      {
+       "title": "Efficacy and safety of retatrutide, a GIP, GLP-1, and glucagon receptor agonist, in people with type 2 diabetes and inadequate glycaemic control with diet and exercise (TRANSCEND-T2D-1): a double-blind, randomised, phase 3 trial",
+       "authors": "",
+       "journal": "Lancet",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(26)00967-0/abstract"
+      },
+      {
+       "title": "Cagrilintide–semaglutide (CagriSema) versus semaglutide or cagrilintide in people with type 2 diabetes (REIMAGINE 2): a double-blind, randomised, controlled, phase 3 study",
+       "authors": "",
+       "journal": "Lancet Diabetes Endocrinol",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/landia/article/PIIS2213-8587(26)00125-7/abstract"
+      },
+      {
+       "title": "Continuous glucose monitoring versus self-monitoring of blood glucose in individuals with type 2 diabetes: a randomised, multicentre, open-label, superiority trial",
+       "authors": "",
+       "journal": "Lancet Diabetes Endocrinol",
+       "date": "",
+       "preprint": false,
+       "review": false,
+       "tier": "top",
+       "url": "https://www.thelancet.com/journals/landia/article/PIIS2213-8587(26)00076-8/fulltext"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "news": [
+  {
+   "label": "Nature",
+   "items": [
+    {
+     "title": "Briefing Chat: An invisible tattoo that appears under UV light – and then disappears",
+     "url": "https://www.nature.com/articles/d41586-026-03341-3",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "The pianist who never played",
+     "url": "https://www.nature.com/articles/d41586-026-03112-0",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "IceCube just won a Nobel prize. Protect astroparticle physics projects with the same potential",
+     "url": "https://www.nature.com/articles/d41586-026-03308-4",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "Memory stays strong in old age when this brain enzyme is active",
+     "url": "https://www.nature.com/articles/d41586-026-03303-9",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "Unprecedented atlas explores mitochondria across the tree of life",
+     "url": "https://www.nature.com/articles/d41586-026-03195-9",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "PhD students who write dissertation with AI less likely to stay in academia",
+     "url": "https://www.nature.com/articles/d41586-026-03253-2",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "History’s long-secret codes are being cracked by amateurs using AI",
+     "url": "https://www.nature.com/articles/d41586-026-03338-y",
+     "source": "Nature",
+     "date": "2026-10-16",
+     "image": ""
+    },
+    {
+     "title": "Is AI eroding PhD students’ critical thinking and analysis skills?",
+     "url": "https://www.nature.com/articles/d41586-026-03178-w",
+     "source": "Nature",
+     "date": "2026-10-15",
+     "image": ""
+    },
+    {
+     "title": "World’s timekeepers upend how they adjust time to avoid catastrophic ‘negative second’",
+     "url": "https://www.nature.com/articles/d41586-026-03329-z",
+     "source": "Nature",
+     "date": "2026-10-15",
+     "image": ""
+    },
+    {
+     "title": "Orangutan mothers arrange play dates for their babies",
+     "url": "https://www.nature.com/articles/d41586-026-03238-1",
+     "source": "Nature",
+     "date": "2026-10-15",
+     "image": ""
+    }
+   ],
+   "logo": "https://www.nature.com/uploads/product/nature/rss.png"
+  },
+  {
+   "label": "Science",
+   "error": "not fetched for this example",
+   "items": [],
+   "logo": ""
+  },
+  {
+   "label": "eLife Magazine",
+   "items": [
+    {
+     "title": "The cow udder as an influenza mixing ground",
+     "url": "https://elifesciences.org/articles/113101",
+     "source": "eLife Magazine",
+     "date": "2026-10-15",
+     "image": ""
+    },
+    {
+     "title": "Lifestyle, Environment and Epigenetic Inheritance: A Collection of Articles",
+     "url": "https://elifesciences.org/collections/1d2aeef4",
+     "source": "eLife Magazine",
+     "date": "2026-09-30",
+     "image": "https://iiif.elifesciences.org/journal-cms/collection%2F2026-09%2Fscreenshot-2026-09-08-at-18.27.07.png/full/800,/0/default.jpg"
+    },
+    {
+     "title": "Episode 105: September 2026",
+     "url": "https://elifesciences.org/podcast/episode105",
+     "source": "eLife Magazine",
+     "date": "2026-09-23",
+     "image": "https://iiif.elifesciences.org/journal-cms/podcast_episode%2F2026-09%2Fanastasiya-badun-2wdxccw83hm-unsplash.jpg/full/800,/0/default.jpg"
+    },
+    {
+     "title": "How experience shapes individuality",
+     "url": "https://elifesciences.org/articles/112851",
+     "source": "eLife Magazine",
+     "date": "2026-09-11",
+     "image": ""
+    },
+    {
+     "title": "How monkeys carve up the visual world",
+     "url": "https://elifesciences.org/articles/112456",
+     "source": "eLife Magazine",
+     "date": "2026-08-17",
+     "image": ""
+    }
+   ],
+   "logo": ""
+  },
+  {
+   "label": "Retraction Watch",
+   "items": [
+    {
+     "title": "Weekend reads: Computer science conferences impose caps; Lancet strikes to continue; Is this the ‘mathocalypse’?",
+     "url": "https://retractionwatch.com/2026/10/17/weekend-reads-computer-science-conferences-impose-caps-lancet-strikes-continue-mathocalypse/",
+     "source": "Retraction Watch",
+     "date": "2026-10-17",
+     "image": "https://retractionwatch.com/wp-content/uploads/2024/01/rw-1024x768.jpeg"
+    },
+    {
+     "title": "‘Springer’ agency website offering authorship for sale goes down following Retraction Watch story",
+     "url": "https://retractionwatch.com/2026/10/16/springer-agency-website-offering-authorship-for-sale-goes-down-following-retraction-watch-story/",
+     "source": "Retraction Watch",
+     "date": "2026-10-16",
+     "image": "https://retractionwatch.com/wp-content/uploads/2026/10/SJO_-1024x552.jpg"
+    },
+    {
+     "title": "Journal retracts, republishes paper on Long COVID treatment trial",
+     "url": "https://retractionwatch.com/2026/10/15/journal-retracts-republishes-paper-on-long-covid-treatment-trial/",
+     "source": "Retraction Watch",
+     "date": "2026-10-15",
+     "image": "https://retractionwatch.com/wp-content/uploads/2026/10/annals-internal-medicine.png"
+    },
+    {
+     "title": "Paper touted by MD Anderson gets expression of concern for data ‘concerns’",
+     "url": "https://retractionwatch.com/2026/10/14/science-translational-medicine-md-anderson-expression-of-concern-data-concerns-china/",
+     "source": "Retraction Watch",
+     "date": "2026-10-14",
+     "image": "https://retractionwatch.com/wp-content/uploads/2026/10/ihc-stain-acbp-protein-bone-mets-breast-cancer-1024x576.jpg"
+    },
+    {
+     "title": "Former Crick Ph.D. student loses COVID vaccine paper for fabrication",
+     "url": "https://retractionwatch.com/2026/10/14/former-crick-ph-d-student-loses-covid-vaccine-paper-for-fabrication/",
+     "source": "Retraction Watch",
+     "date": "2026-10-14",
+     "image": ""
+    },
+    {
+     "title": "Authors respond with ‘a bit like a threat’ after journal reveals postdoc’s identity",
+     "url": "https://retractionwatch.com/2026/10/13/physics-of-fluids-aip-publishing-authors-respond-journal-postdoc-identity/",
+     "source": "Retraction Watch",
+     "date": "2026-10-13",
+     "image": ""
+    },
+    {
+     "title": "A company named Springer that isn’t the publisher is offering authorship for sale",
+     "url": "https://retractionwatch.com/2026/10/12/springer-journals-online-authorship-for-sale/",
+     "source": "Retraction Watch",
+     "date": "2026-10-12",
+     "image": ""
+    },
+    {
+     "title": "Weekend reads: OpenAI’s preprint dump; Taylor & Francis to leave Informa; arXiv’s preprint cap",
+     "url": "https://retractionwatch.com/2026/10/10/weekend-reads-openais-preprint-dump-taylor-francis-to-leave-informa-arxivs-preprint-cap/",
+     "source": "Retraction Watch",
+     "date": "2026-10-10",
+     "image": ""
+    }
+   ],
+   "logo": "https://retractionwatch.com/wp-content/uploads/2018/02/retractionwatch31-150x150.jpg"
+  }
+ ],
+ "group_pubs": {
+  "example": true,
+  "latest": {
+   "title": "Proteomic profiling of liver and plasma uncovers biomarkers and mechanisms in patients with primary biliary cholangitis",
+   "authors": "Jesper Sloth Kellemann, Anne-Sofie Houlberg Jensen, Annelaura Bach Nielsen, …, Nicolai J. Wewer Albrechtsen",
+   "journal": "Communications Medicine",
+   "date": "2026-10-01",
+   "url": "https://doi.org/10.1038/s43856-026-01924-9",
+   "sources": [
+    "OpenAlex"
+   ]
+  },
+  "per_year": [
+   {
+    "year": 2019,
+    "n": 14
+   },
+   {
+    "year": 2020,
+    "n": 22
+   },
+   {
+    "year": 2021,
+    "n": 25
+   },
+   {
+    "year": 2022,
+    "n": 27
+   },
+   {
+    "year": 2023,
+    "n": 24
+   },
+   {
+    "year": 2024,
+    "n": 30
+   },
+   {
+    "year": 2025,
+    "n": 28
+   },
+   {
+    "year": 2026,
+    "n": 21
+   }
+  ]
+ },
+ "daily": {
+  "target": {
+   "gene": "GLP1R",
+   "protein": "Glucagon-like peptide 1 receptor",
+   "accession": "P43220",
+   "function": "G-protein coupled receptor for glucagon-like peptide 1 (GLP-1). Ligand binding activates adenylyl cyclase and raises intracellular cAMP; it regulates insulin secretion in response to GLP-1.",
+   "drugs": [
+    "Semaglutide",
+    "Liraglutide",
+    "Dulaglutide",
+    "Exenatide",
+    "Lixisenatide",
+    "Tirzepatide"
+   ],
+   "n_drugs": 6,
+   "mechanism": "Glucagon-like peptide 1 receptor agonist",
+   "indications": [
+    "Diabetes Mellitus, Type 2",
+    "Obesity"
+   ],
+   "links": {
+    "UniProt": "https://www.uniprot.org/uniprotkb/P43220/entry",
+    "Open Targets": "https://platform.opentargets.org/search?q=GLP1R",
+    "Protein Atlas": "https://www.proteinatlas.org/search/GLP1R"
+   },
+   "source": "example"
+  },
+  "owid": {
+   "title": "How many people in the world identify with a particular religion?",
+   "url": "https://ourworldindata.org/data-insights/how-many-people-in-the-world-identify-with-a-particular-religion",
+   "date": "2026-10-17",
+   "image": "https://ourworldindata.org/cdn-cgi/imagedelivery/qLq-8BTgXU8yG0N6HnOy8g/357f0983-b080-48f7-da0a-a20b6d7a3b00/w=1350",
+   "text": ""
+  },
+  "motm": {
+   "title": "Celebrating 55 Years of the PDB",
+   "url": "https://pdb101.rcsb.org/motm/322",
+   "date": "2026-10-01",
+   "text": "Enabling the rapid evolution of protein structure prediction and design",
+   "image": "https://cdn.rcsb.org/pdb101/motm/322/orf8.png"
+  },
+  "spotlight_enabled": true,
+  "target_enabled": false,
+  "spotlight": {
+   "title": "Fuel",
+   "url": "https://www.proteinspotlight.org/spotlight/back_issues/295/",
+   "date": "2026-10",
+   "issue": "295",
+   "image": "https://www.proteinspotlight.org/spotlight/images/sptlt295.jpg",
+   "text": "We need fat. Organisms from bacteria to humans need some form of fuel for every action, conscious or not.",
+   "proteins": [
+    {
+     "accession": "Q8R400",
+     "name": "Adipogenin",
+     "organism": "Mouse",
+     "url": "https://www.uniprot.org/uniprotkb/Q8R400/entry"
+    },
+    {
+     "accession": "Q9Z2E9",
+     "name": "Seipin",
+     "organism": "Mouse",
+     "url": "https://www.uniprot.org/uniprotkb/Q9Z2E9/entry"
+    }
+   ]
+  }
+ },
+ "status": [
+  {
+   "name": "Papers (example items from a web search, not a live query)",
+   "ok": false,
+   "error": "Europe PMC was rate-limited when this example was made"
+  },
+  {
+   "name": "News · Nature",
+   "ok": true,
+   "count": 10
+  },
+  {
+   "name": "News · Science",
+   "ok": false,
+   "error": "not fetched for this example"
+  },
+  {
+   "name": "News · eLife Magazine",
+   "ok": true,
+   "count": 5
+  },
+  {
+   "name": "News · Retraction Watch",
+   "ok": true,
+   "count": 8
+  },
+  {
+   "name": "Group publications",
+   "ok": false,
+   "error": "no ORCIDs in config.yml, showing example"
+  },
+  {
+   "name": "Protein Spotlight",
+   "ok": true,
+   "count": 1
+  },
+  {
+   "name": "Our World in Data",
+   "ok": true,
+   "count": 1
+  },
+  {
+   "name": "PDB Molecule of the Month",
+   "ok": true,
+   "count": 1
+  }
+ ]
+}
