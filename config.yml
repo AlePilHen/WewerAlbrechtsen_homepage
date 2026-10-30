@@ -186,9 +186,11 @@ daily:
 # ------------------------------------------------------------------
 # Coming up: courses, events and conferences (left column)
 #
-# Rules: an event disappears once it has ended, or 7 days after its
-# registration deadline. Courses and events are shown up to
-# window_days ahead, conferences up to conference_window_days ahead.
+# Rules: an event disappears once it has ended, when registration is
+# closed, or 7 days after its registration deadline. A course or event
+# without a known deadline disappears 10 days before it starts.
+# Courses and events are shown up to window_days ahead (or while their
+# deadline is within that window); conferences up to conference_window_days.
 # Keywords: "metabol*" matches metabolism, metabolic, ...; words in
 # CAPITALS (like AI) only match exactly.
 # ------------------------------------------------------------------
@@ -196,24 +198,40 @@ events:
   window_days: 120
   conference_window_days: 365
   hide_days_after_deadline: 7
+  hide_days_before_start_without_deadline: 10   # courses/events (not conferences) with no known deadline
   urgent_days: 14          # deadlines closer than this are highlighted
-  show: 5                  # shown before "Show all"
+  show: 6                  # shown before "Show all"
+
+  # Courses from DDSA and TeSS containing one of these words are left out
+  exclude_words: [music*, humanities, social science*, Fundamentals of the PhD education]
+
+  # Hide individual events: part of the title or the link (not case-sensitive)
+  hide: []
 
   ddsa:                    # Danish Data Science Academy (events API)
     categories: [DDSA-Organised Event, DDSA-Funded Event]
     course_category: PhD Course
-    course_tags: [Bioinformatics, Biostatistics, Data Analysis]
+    course_tags: [Bioinformatics, Biostatistics]
+    # PhD courses must also mention one of these in the title or description
+    course_topic_words: [biomed*, clinical, health, medic*, omics, proteom*, protein*, metabol*, diabet*,
+                         genom*, genetic*, statistic*, biostatistic*, bioinformatic*, epidemiolog*]
+    # When DDSA only re-posts an event, the dashboard links to the original page, and the
+    # deadline is looked up there for these sites:
+    follow_links_to: [ddeacademy.dk, phdcourses.dk]
 
   science_cluster:         # NNF Science Cluster (event pages)
-    keywords: [metabol*, diabet*, obesity, endocrin*, liver, protein*, proteom*, data, AI, health]
+    keywords: [metabol*, diabet*, obesity, endocrin*, liver, protein*, proteom*, genom*, genetic*, data, AI, health]
 
   ddea:                    # Danish Diabetes and Endocrine Academy (event pages)
     enabled: true          # skipped automatically if the site forbids automated reading
 
   tess:                    # ELIXIR TeSS training register
     keywords: [proteomics, mass spectrometry, metabolomics, metabolism, diabetes, endocrinology,
-               obesity, biomarker, liver, health data, biostatistics]
+               obesity, biomarker, liver, health data, biostatistics, protein, UniProt, variant effect, omics]
     in_person_countries: [Denmark, Sweden, Norway, Finland, Iceland]   # online courses: any country
+    # In-person courses from these are shown wherever they are held (EMBL-EBI, EMBL Heidelberg).
+    # Their application deadline is read from the course page.
+    trusted_providers: [ebi.ac.uk, embl.org]
 
   # Conferences: list each series once. Use {year} where the address contains the year;
   # otherwise give a page that always lists the next meeting(s).
@@ -229,6 +247,7 @@ events:
     - {name: ASMS Conference, url: "https://www.asms.org/conferences/annual-conference/future-annual-conferences"}
     - {name: DAPSOC Symposium, url: "https://dapsoc.org/events/", one_day: true}
     - {name: Metabolism Day (KU), url: "https://healthsciences.ku.dk/calender/calender-{year}/metabolism-day-{year}/", one_day: true}
+
 
 
 # ------------------------------------------------------------------

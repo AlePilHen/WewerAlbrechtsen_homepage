@@ -874,6 +874,12 @@ _WEEKDAYS = re.compile(r"\b(monday|tuesday|wednesday|thursday|friday|saturday|su
 
 # Most specific first; each match "uses up" its text so it isn't matched again as a single date.
 DATE_PATTERNS = [
+    # Dates written with numbers (day.month.year, as on Danish sites): 05.11.2026 - 06.11.2026
+    ("num-num", re.compile(r"\b(\d{1,2})[./-](\d{1,2})[./-](20\d\d)\s*-\s*(\d{1,2})[./-](\d{1,2})[./-](20\d\d)\b")),
+    # 05.-06.11.2026
+    ("numd-num", re.compile(r"\b(\d{1,2})\.?\s*-\s*(\d{1,2})[./](\d{1,2})[./](20\d\d)\b")),
+    # 04.10.2026  /  04/10/2026
+    ("num", re.compile(r"\b(\d{1,2})[./-](\d{1,2})[./-](20\d\d)\b")),
     # 30 May 2029 - 2 June 2029  /  30 December - 2 January 2027
     ("dm-dm", re.compile(rf"\b{_D}\s*{_M}\s*{_Y}?\s*-\s*{_D}\s*{_M}\s*{_Y}?", re.I)),
     # 16 - 19 June 2027  /  07-11 September 2026
@@ -895,6 +901,7 @@ def normalise_for_dates(text: str) -> str:
     """Make date wordings uniform: drop weekday names and commas, one kind of dash, 'to' -> '-'."""
     t = _WEEKDAYS.sub(" ", text)
     t = re.sub(r"[\u2010-\u2015\u2212]", "-", t)
+    t = re.sub(r"(\d{1,2}[./-]\d{1,2}[./-]20\d\d)\s*(?:-|,|kl\.?|at)?\s*\d{1,2}[:.]\d{2}(?![./]?\d)(?:\s*(?:CET|CEST|h))?", r"\1", t)
     t = re.sub(r"\s+(?:to|until|till|through|thru|til)\s+", " - ", t, flags=re.I)
     t = re.sub(r"(\d)(?:st|nd|rd|th)\b", r"\1", t)
     t = t.replace(",", " ")
@@ -922,7 +929,14 @@ def find_dates(text: str, default_year: int | None = None) -> list[dict]:
             if any(used[m.start():m.end()]):
                 continue
             g = m.groups()
-            if kind == "dm-dm":
+            if kind == "num-num":
+                s, e, has_year = _mk(g[2], g[1], g[0]), _mk(g[5], g[4], g[3]), True
+            elif kind == "numd-num":
+                s, e, has_year = _mk(g[3], g[2], g[0]), _mk(g[3], g[2], g[1]), True
+            elif kind == "num":
+                s = e = _mk(g[2], g[1], g[0])
+                has_year = True
+            elif kind == "dm-dm":
                 d1, m1, y1, d2, m2, y2 = g
                 y2 = y2 or y1 or default_year
                 y1 = y1 or (int(y2) - 1 if y2 and MONTH_NUM[m1.lower()] > MONTH_NUM[m2.lower()] else y2)
@@ -964,8 +978,13 @@ def find_dates(text: str, default_year: int | None = None) -> list[dict]:
 DEADLINE_RX = re.compile(
     r"\b(application deadline|deadline for applications?|abstract (?:submission )?deadline|deadline for abstracts?|"
     r"abstracts? (?:due|by)|registration deadline|early[- ]?(?:bird )?registration(?: deadline)?|registration closes|"
-    r"register (?:by|before)|sign[- ]?up (?:by|before)|apply (?:by|before)|enrol(?:l)?ment deadline|deadline|"
-    r"tilmeldingsfrist|ansøgningsfrist|frist)", re.I)
+    r"register (?:by|before)|sign[- ]?up (?:by|before)|apply (?:by|before)|enrol(?:l)?ment deadline|"
+    r"applications? (?:close|closes|closing)|closing date|last day (?:of|for) (?:registration|sign[- ]?up|applications?)|"
+    r"deadline|tilmeldingsfrist|ansøgningsfrist|sidste frist|frist)", re.I)
+# Pages that say registration is over: such events are not shown
+CLOSED_RX = re.compile(r"registration (?:is |has )?(?:now )?(?:closed|ended)|applications? (?:are |is |have )?(?:now )?closed|"
+                       r"fully booked|sold out|no (?:more|available) (?:places|seats|spots)|waiting list only|"
+                       r"(?<!if the )(?:course|event|workshop) is (?:now )?full\b|tilmelding(?:en)? er lukket|fuldt booket|udsolgt", re.I)
 REG_APPLY = re.compile(r"\b(by application|apply (?:by|before|here|now|for (?:a |the )?(?:place|participation|admission))|"
                        r"application (?:deadline|form)|applications? (?:open|close|must)|selected (?:by|from) (?:the )?"
                        r"(?:abstract|application)s?|ansøg)", re.I)
@@ -982,7 +1001,7 @@ def deadline_kind(phrase: str) -> str:
         return "Abstracts"
     if "early" in p:
         return "Early registration"
-    if "appl" in p or "ansøg" in p:
+    if "appl" in p or "ansøg" in p or "closing" in p:
         return "Application"
     return "Sign-up"
 
@@ -1002,13 +1021,15 @@ def registration_info(text: str, event_start: dt.date | None) -> dict:
             d = d.replace(year=d.year - 1)  # "19 January" before a June congress is January of the same season
         if event_start and d > event_start:
             continue  # a "deadline" after the event starts is something else
-        deadlines.append((d, deadline_kind(m.group(1))))
-    info = {"deadline": "", "deadline_label": "", "reg": ""}
+        deadlines.append((d, deadline_kind(m.group(1)), (m.group(0) + window[:dates[0]["endpos"]]).strip()))
+    info = {"deadline": "", "deadline_label": "", "reg": "", "deadline_text": ""}
     if deadlines:
         recent = sorted(x for x in deadlines if x[0] >= TODAY - dt.timedelta(days=7))
-        d, label = recent[0] if recent else max(deadlines)
-        info["deadline"], info["deadline_label"] = d.isoformat(), label
-    if REG_NONE.search(t):
+        d, label, quote = recent[0] if recent else max(deadlines)
+        info["deadline"], info["deadline_label"], info["deadline_text"] = d.isoformat(), label, quote
+    if CLOSED_RX.search(t):
+        info["reg"] = "closed"
+    elif REG_NONE.search(t):
         info["reg"] = "none"
     elif REG_OPEN.search(t):
         info["reg"] = "open"
@@ -1019,15 +1040,29 @@ def registration_info(text: str, event_start: dt.date | None) -> dict:
     return info
 
 
-def keyword_regex(words: list[str]) -> re.Pattern | None:
+EVENT_DATE_LABEL = re.compile(r"\b(event date|date and time|date & time|dates?|when|time and place|dato|tidspunkt)\s*:?", re.I)
+
+
+def labelled_event_date(text: str) -> dict | None:
+    """The date right after a label such as "Event date" or "Date:" (more reliable than guessing)."""
+    t = normalise_for_dates(text)
+    for m in EVENT_DATE_LABEL.finditer(t):
+        dates = find_dates(t[m.end(): m.end() + 80])
+        if dates and dates[0]["has_year"] and dates[0]["pos"] <= 15:
+            return dates[0]
+    return None
+
+
+def keyword_regex(words: list[str], stems: bool = False) -> re.Pattern | None:
     """Keywords from config.yml -> one regular expression. 'metabol*' matches metabolism,
-    metabolic...; words in CAPITALS (like AI) must match exactly, including case."""
+    metabolic...; words in CAPITALS (like AI) must match exactly, including case.
+    With stems=True every word also matches longer forms ("protein" -> "proteins")."""
     parts = []
     for w in words or []:
         w = str(w).strip()
         if not w:
             continue
-        body = re.escape(w.rstrip("*")).replace(r"\ ", r"\s+") + (r"\w*" if w.endswith("*") else "")
+        body = re.escape(w.rstrip("*")).replace(r"\ ", r"\s+") + (r"\w*" if w.endswith("*") or stems else "")
         parts.append(rf"(?-i:\b{body}\b)" if w.isupper() else rf"\b{body}\b")
     return re.compile("|".join(parts), re.I) if parts else None
 
@@ -1098,20 +1133,47 @@ def time_of(s: str) -> str:
 def new_event(**kw) -> dict:
     base = {"title": "", "url": "", "alt_urls": [], "start": "", "end": "", "time": "", "where": "",
             "online": False, "source": "", "kind": "event", "deadline": "", "deadline_label": "",
-            "reg": "", "cost": ""}
+            "deadline_text": "", "reg": "", "cost": ""}
     base.update(kw)
     if not base["end"]:
         base["end"] = base["start"]
     return base
 
 
+# Everything the calendar considered, and why it was shown or left out (written to events_report.txt)
+EVENT_REPORT: list[dict] = []
+
+
+def left_out(source: str, title: str, reason: str, url: str = "", start: str = "") -> None:
+    EVENT_REPORT.append({"status": "left out", "reason": reason, "source": source, "title": plain(clean_title(title)),
+                         "start": start, "url": url, "deadline": "", "deadline_text": ""})
+
+
+def _domain(url: str) -> str:
+    return re.sub(r"^www\.", "", (url or "").split("/")[2].lower()) if "//" in (url or "") else ""
+
+
+def _matches_domain(url: str, domains: list[str]) -> bool:
+    d = _domain(url)
+    return any(d == x.lower() or d.endswith("." + x.lower()) for x in domains or [])
+
+
+def deadline_from_page(url: str, start: dt.date) -> dict:
+    """Open an event's own page and read its deadline / registration status from there."""
+    page, _ = fetch_page(url)
+    time.sleep(0.4)  # be polite to the site
+    return registration_info(html_text(page), start)
+
+
 # ---------- Source: Danish Data Science Academy (events API) ----------
 
-def ev_ddsa(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
+def ev_ddsa(c: dict, horizon: dt.date, rules: dict) -> tuple[list[dict], str]:
     api = c.get("api", "https://ddsa.dk/wp-json/tribe/events/v1/events")
     keep_cats = {x.lower() for x in c.get("categories", ["DDSA-Organised Event", "DDSA-Funded Event"])}
     course_cat = c.get("course_category", "PhD Course").lower()
     course_tags = {x.lower() for x in c.get("course_tags", [])}
+    topic_rx = keyword_regex(c.get("course_topic_words", []))
+    follow = c.get("follow_links_to", ["ddeacademy.dk", "phdcourses.dk"])
     raw, page = [], 1
     while page <= 10:
         d = get(api, params={"start_date": TODAY.isoformat(), "end_date": horizon.isoformat(),
@@ -1120,30 +1182,56 @@ def ev_ddsa(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
         if page >= int(d.get("total_pages") or 1):
             break
         page += 1
-    out, skipped = [], 0
+    out, why, followed = [], Counter(), 0
     for e in raw:
+        title = clean_title(e.get("title"))
         cats = {x.get("name", "").lower() for x in e.get("categories") or []}
         tags = {x.get("name", "").lower() for x in e.get("tags") or []}
         is_course = course_cat in cats
+        desc = html_text(e.get("description") or "")
+        ddsa_url, website = e.get("url", ""), (e.get("website") or "").strip()
+        # Link to the original page when DDSA only re-posts someone else's event
+        link = website if website.startswith("http") and "ddsa.dk" not in _domain(website) else ddsa_url
+        reason = ""
         if not (cats & keep_cats or (is_course and tags & course_tags)):
-            skipped += 1
+            reason = "category/tag filter"
+        elif rules["exclude"] and rules["exclude"].search(f"{title} {desc[:600]}"):
+            reason = "exclude word"
+        elif is_course and topic_rx and not topic_rx.search(f"{title} {desc}"):
+            reason = "no topic word"
+        if reason:
+            why[reason] += 1
+            left_out("DDSA", title, reason, link, e.get("start_date", "")[:10])
             continue
         venue = e.get("venue") if isinstance(e.get("venue"), dict) else {}
         start = dt.date.fromisoformat(e["start_date"][:10])
-        desc = html_text(e.get("description") or "")
         info = registration_info(desc, start)
+        # No deadline in DDSA's text: look on the original page (e.g. DDEA, phdcourses.dk)
+        if not info["deadline"] and link != ddsa_url and _matches_domain(link, follow):
+            try:
+                theirs = deadline_from_page(link, start)
+                followed += 1
+                info = {k: theirs[k] or info[k] for k in info}
+                if theirs["reg"] == "closed":
+                    info["reg"] = "closed"
+            except Exception:
+                pass
         cost = str(e.get("cost") or "")
         where_txt = " ".join(str(venue.get(k) or "") for k in ("venue", "city"))
         times = "" if e.get("all_day") else "–".join(x for x in (time_of(e.get("start_date")), time_of(e.get("end_date"))) if x)
         out.append(new_event(
-            title=clean_title(e.get("title")), url=e.get("url", ""), alt_urls=[e.get("website") or ""],
+            title=title, url=link, alt_urls=[ddsa_url, website],
             start=start.isoformat(), end=(e.get("end_date") or e["start_date"])[:10], time=times,
             where=venue.get("city") or venue.get("venue") or "",
-            online=bool(ONLINE_RX.search(where_txt + " " + (e.get("title") or ""))),
+            online=bool(ONLINE_RX.search(where_txt + " " + title)),
             source="DDSA", kind="course" if is_course else "event",
             cost="Free" if cost.lower().startswith("free") or cost.strip() in ("0", "0 DKK") else "",
             **info))
-    return out, f" ({skipped} left out by category/tag filter)" if skipped else ""
+    notes = [f"{n} {k}" for k, n in why.most_common()]
+    if followed:
+        notes.append(f"deadline looked up on {plural(followed, 'original page')}")
+    return out, f" ({', '.join(notes)})" if notes else ""
+
 
 
 # ---------- Source: NNF Science Cluster (event pages listed in the sitemap) ----------
@@ -1185,11 +1273,13 @@ def ev_science_cluster(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
         about = " ".join([title, page_summary(page), first_paragraph(page)])
         if rx and not rx.search(about):
             off_topic += 1
+            left_out("Science Cluster", title, "no keyword in title or summary", url, s.isoformat())
             continue
         dl = re.search(r"Application\s+Deadline\s+(\d{1,2}\s+[A-Za-z]{3,9}\.?\s+20\d\d)", text, re.I)
         info = registration_info(text, s)
         if dl:
-            info.update(deadline=find_dates(dl.group(1))[0]["start"].isoformat(), deadline_label="Application")
+            info.update(deadline=find_dates(dl.group(1))[0]["start"].isoformat(), deadline_label="Application",
+                        deadline_text=" ".join(dl.group(0).split()))
         place = re.search(r"\b\d{4}\s+([A-ZÆØÅ][a-zæøå]+(?:\s[A-ZÆØÅ][a-zæøå]+)?)\s+Denmark", text)
         out.append(new_event(
             title=re.sub(r"^(Conference|Lecture|Course)\s*:\s*", "", title), url=url,
@@ -1205,7 +1295,7 @@ def ev_science_cluster(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
 
 # ---------- Source: Danish Diabetes and Endocrine Academy (event pages) ----------
 
-def ev_ddea(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
+def ev_ddea(c: dict, horizon: dt.date, rules: dict) -> tuple[list[dict], str]:
     list_url = c.get("list", "https://ddeacademy.dk/events/")
     page, _ = fetch_page(list_url)  # raises RobotsBlocked if the site says no
     links = list(dict.fromkeys(re.findall(r'href="(https?://(?:www\.)?ddeacademy\.dk/events/[a-z0-9-]+/[a-z0-9-]+/?)"', page)))
@@ -1220,19 +1310,25 @@ def ev_ddea(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
             continue
         time.sleep(0.3)
         text = html_text(p)
-        # The event's own date: the first date that isn't part of a deadline sentence
-        dates = [d for d in _outside_deadlines(text, find_dates(text)) if d["has_year"]]
-        if not dates:
-            continue
-        d = dates[0]
+        title = page_title(p)
+        # The event's own date: from the "Event date" field if there is one, otherwise the
+        # first date on the page that isn't part of a deadline sentence
+        d = labelled_event_date(text)
+        if not d:
+            dates = [x for x in _outside_deadlines(text, find_dates(text)) if x["has_year"]]
+            if not dates:
+                left_out("DDEA", title, "no event date found", url)
+                continue
+            d = dates[0]
         kind_seg = url.rstrip("/").split("/")[-2]
         out.append(new_event(
-            title=page_title(p), url=url, start=d["start"].isoformat(), end=d["end"].isoformat(),
-            online=bool(ONLINE_RX.search(page_title(p))), source="DDEA",
+            title=title, url=url, start=d["start"].isoformat(), end=d["end"].isoformat(),
+            online=bool(ONLINE_RX.search(title)), source="DDEA",
             kind="course" if "course" in kind_seg else "event",
             cost="Free" if FREE_RX.search(text) else "", **registration_info(text, d["start"])))
     progress_done()
     return out, ""
+
 
 
 # ---------- Source: ELIXIR TeSS (training register, search API) ----------
@@ -1256,19 +1352,22 @@ def _labels(v) -> list[str]:
     return [x for x in out if x]
 
 
-def ev_tess(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
+def ev_tess(c: dict, horizon: dt.date, rules: dict) -> tuple[list[dict], str]:
     api = c.get("api", "https://tess.elixir-europe.org/events.json")
     keywords = c.get("keywords", [])
-    rx = keyword_regex(keywords)
+    rx = keyword_regex(keywords, stems=True)  # "protein" also matches "proteins"
     nordic = {x.lower() for x in c.get("in_person_countries", ["Denmark", "Sweden", "Norway", "Finland", "Iceland"])}
+    trusted = c.get("trusted_providers", ["ebi.ac.uk", "embl.org"])
     found: dict[str, dict] = {}
     for kw in keywords:
         for rec in _tess_records(get(api, params={"q": kw}).json()):
             found.setdefault(str(rec.get("id") or rec.get("url")), rec)
         time.sleep(0.2)
-    why = Counter()
+    why, looked_up = Counter(), 0
     out = []
     for e in found.values():
+        title = clean_title(e.get("title"))
+        url = e.get("url") or ""
         try:
             s = dt.date.fromisoformat(str(e.get("start"))[:10])
             en = dt.date.fromisoformat(str(e.get("end") or e.get("start"))[:10])
@@ -1281,30 +1380,51 @@ def ev_tess(c: dict, horizon: dt.date) -> tuple[list[dict], str]:
         country = str(e.get("country") or "").strip().lower()
         elig = [str(x).lower() for x in e.get("eligibility") or []]
         tags = " ".join(_labels(e.get("keywords")) + _labels(e.get("scientific_topics")))
+        is_trusted = _matches_domain(url, trusted)
+        reason = ""
         if en < TODAY or s > horizon:
-            why["outside the time window"] += 1
+            reason = "outside the time window"
         elif types and not any("course" in t or "workshop" in t for t in types):
-            why["not a course"] += 1
-        elif not online and country not in nordic:
-            why["in person outside the Nordics"] += 1
+            reason = "not a course"
+        elif not online and country not in nordic and not is_trusted:
+            reason = "in person outside the Nordics"
         elif any("invitation" in x for x in elig):
-            why["by invitation only"] += 1
-        elif rx and not rx.search(f"{e.get('title', '')} {tags}"):
-            why["weak match"] += 1
-        else:
-            info = registration_info(html_text(str(e.get("description") or "")), s)
-            if not info["reg"]:
-                info["reg"] = ("application" if any("interest" in x for x in elig)
-                               else "required" if any("first_come" in x for x in elig) else "")
-            basis, value = str(e.get("cost_basis") or "").lower(), e.get("cost_value")
-            out.append(new_event(
-                title=clean_title(e.get("title")), url=e.get("url") or "", start=s.isoformat(), end=en.isoformat(),
-                time=time_of(str(e.get("start"))), where=e.get("city") or ("" if online else e.get("country") or ""),
-                online=online, source="TeSS", kind="course",
-                cost="Free" if basis.startswith("free") else (f"Fee {value:g}" if isinstance(value, (int, float)) and value else ""),
-                **info))
-    note = f" ({len(found)} found: " + ", ".join(f"{n} {k}" for k, n in why.most_common()) + ")" if why else ""
-    return out, note
+            reason = "by invitation only"
+        elif rx and not rx.search(f"{title} {tags}"):
+            reason = "weak match"
+        elif rules["exclude"] and rules["exclude"].search(title):
+            reason = "exclude word"
+        if reason:
+            why[reason] += 1
+            if reason not in ("outside the time window",):
+                left_out("TeSS", title, reason, url, s.isoformat())
+            continue
+        info = registration_info(html_text(str(e.get("description") or "")), s)
+        # EMBL-EBI / EMBL courses: the application deadline is on the course page, not in TeSS
+        if not info["deadline"] and is_trusted and url:
+            try:
+                theirs = deadline_from_page(url, s)
+                looked_up += 1
+                info = {k: theirs[k] or info[k] for k in info}
+                if theirs["reg"] == "closed":
+                    info["reg"] = "closed"
+            except Exception:
+                pass
+        if not info["reg"]:
+            info["reg"] = ("application" if any("interest" in x for x in elig)
+                           else "required" if any("first_come" in x for x in elig) else "")
+        basis, value = str(e.get("cost_basis") or "").lower(), e.get("cost_value")
+        out.append(new_event(
+            title=title, url=url, start=s.isoformat(), end=en.isoformat(),
+            time=time_of(str(e.get("start"))), where=e.get("city") or ("" if online else e.get("country") or ""),
+            online=online, source="TeSS", kind="course",
+            cost="Free" if basis.startswith("free") else (f"Fee {value:g}" if isinstance(value, (int, float)) and value else ""),
+            **info))
+    notes = [f"{n} {k}" for k, n in why.most_common()]
+    if looked_up:
+        notes.append(f"deadline looked up on {plural(looked_up, 'course page')}")
+    return out, f" ({len(found)} found: " + ", ".join(notes) + ")" if notes else ""
+
 
 
 # ---------- Source: conference series (yearly pages or "future meetings" pages) ----------
@@ -1398,6 +1518,29 @@ def _norm_url(u: str) -> str:
     return re.sub(r"^https?://(www\.)?", "", (u or "").strip().lower()).rstrip("/")
 
 
+def merge_duplicates(events: list[dict]) -> list[dict]:
+    """The same event from two sources (e.g. a DDEA course also listed by DDSA) becomes one entry.
+    Matched by link or by title + start date; missing details are filled in from either copy."""
+    merged: list[dict] = []
+    for e in events:
+        urls = {_norm_url(u) for u in [e["url"], *e.get("alt_urls", [])] if u}
+        key = (re.sub(r"\W+", "", plain(e["title"]).lower())[:40], e["start"])
+        twin = next((m for m in merged if urls & m["_urls"] or key == m["_key"]), None)
+        if not twin:
+            merged.append({**e, "_urls": urls, "_key": key})
+            continue
+        twin["_urls"] |= urls
+        if e["source"] not in twin["source"]:
+            twin["source"] += f" + {e['source']}"
+        if "ddsa.dk" in twin["url"] and "ddsa.dk" not in e["url"]:
+            twin["url"] = e["url"]  # prefer the original page over DDSA's copy
+        for f in ("deadline", "deadline_label", "deadline_text", "cost", "where", "time"):
+            twin[f] = twin[f] or e[f]
+        if e["reg"] == "closed" or not twin["reg"]:
+            twin["reg"] = e["reg"] or twin["reg"]
+    return [{k: v for k, v in m.items() if not k.startswith("_")} for m in merged]
+
+
 def fetch_events(cfg: dict) -> dict | None:
     ec = cfg.get("events")
     if not ec:
@@ -1405,8 +1548,15 @@ def fetch_events(cfg: dict) -> dict | None:
         return None
     window = int(ec.get("window_days", 120))
     conf_window = int(ec.get("conference_window_days", 365))
+    grace_days = int(ec.get("hide_days_after_deadline", 7))
+    no_deadline_days = int(ec.get("hide_days_before_start_without_deadline", 10))
     horizon = TODAY + dt.timedelta(days=window)
     conf_horizon = TODAY + dt.timedelta(days=conf_window)
+    rules = {"exclude": keyword_regex(ec.get("exclude_words", []))}
+    hide_list = [str(x).lower() for x in ec.get("hide") or [] if str(x).strip()]
+
+    # 1) Collect from every source. Sources look up to a year ahead, because a course far ahead
+    #    is still shown while its application deadline is near (see the window rule below).
     collected: list[dict] = []
     sources = [("DDSA", "ddsa", ev_ddsa), ("Science Cluster", "science_cluster", ev_science_cluster),
                ("DDEA", "ddea", ev_ddea), ("TeSS", "tess", ev_tess)]
@@ -1415,7 +1565,10 @@ def fetch_events(cfg: dict) -> dict | None:
         if not c or c.get("enabled") is False:
             continue
         try:
-            items, note = fn(c, conf_horizon if key == "science_cluster" else horizon)
+            if fn is ev_science_cluster:
+                items, note = fn(c, conf_horizon)
+            else:
+                items, note = fn(c, conf_horizon, rules)
             ok(f"Events · {label}", len(items), label, f"{plural(len(items), 'event')}{note}")
             collected += items
         except RobotsBlocked as e:
@@ -1426,44 +1579,69 @@ def fetch_events(cfg: dict) -> dict | None:
         log("        conference series:")
         collected += ev_conferences(ec["conferences"], conf_horizon)
 
-    # Rules: not ended, inside the window, deadline not more than N days past
-    grace = dt.timedelta(days=int(ec.get("hide_days_after_deadline", 7)))
+    # 2) Merge duplicates first, so a deadline found by one source applies to the other copy too
+    candidates = merge_duplicates(collected)
+
+    # 3) The rules
+    grace = dt.timedelta(days=grace_days)
     kept, dropped = [], Counter()
-    for e in collected:
+    for e in candidates:
         s, en = dt.date.fromisoformat(e["start"]), dt.date.fromisoformat(e["end"])
-        limit = conf_horizon if e["kind"] == "conference" else horizon
+        dl = dt.date.fromisoformat(e["deadline"]) if e["deadline"] else None
+        is_conf = e["kind"] == "conference"
         if en < TODAY:
-            dropped["ended"] += 1
-        elif s > limit:
-            dropped["too far ahead"] += 1
-        elif e["deadline"] and dt.date.fromisoformat(e["deadline"]) < TODAY - grace:
-            dropped["deadline passed"] += 1
+            reason = "ended"
+        elif any(h in plain(e["title"]).lower() or h in e["url"].lower() for h in hide_list):
+            reason = "on the hide list"
+        elif e["reg"] == "closed":
+            reason = "registration closed"
+        elif dl and dl < TODAY - grace:
+            reason = f"deadline passed more than {grace_days} days ago"
+        elif is_conf and s > conf_horizon:
+            reason = "more than 12 months ahead" if conf_window == 365 else "too far ahead"
+        elif not is_conf and s > horizon and not (dl and dl <= horizon):
+            reason = "too far ahead"  # a far-off course is only shown while its deadline is near
+        elif not is_conf and not dl and (s - TODAY).days < no_deadline_days:
+            reason = f"starts within {no_deadline_days} days and no deadline found"
+        else:
+            reason = ""
+        if reason:
+            dropped[reason] += 1
+            EVENT_REPORT.append({"status": "left out", "reason": reason, **{k: e[k] for k in
+                                 ("source", "title", "start", "url", "deadline", "deadline_text")}})
         else:
             kept.append(e)
+            EVENT_REPORT.append({"status": "shown", "reason": "", **{k: e[k] for k in
+                                 ("source", "title", "start", "url", "deadline", "deadline_text")}})
 
-    # The same event from two sources (e.g. a DDEA course also listed by DDSA) is shown once
-    merged: list[dict] = []
-    for e in kept:
-        urls = {_norm_url(u) for u in [e["url"], *e.get("alt_urls", [])] if u}
-        key = (re.sub(r"\W+", "", plain(e["title"]).lower())[:40], e["start"])
-        twin = next((m for m in merged if urls & m["_urls"] or key == m["_key"]), None)
-        if twin:
-            twin["_urls"] |= urls
-            if twin["source"] != e["source"] and e["source"] not in twin["source"]:
-                twin["source"] += f" + {e['source']}"
-            for f in ("deadline", "deadline_label", "reg", "cost", "where", "time"):
-                twin[f] = twin[f] or e[f]
-            continue
-        merged.append({**e, "_urls": urls, "_key": key})
-    items = sorted(({k: v for k, v in m.items() if not k.startswith("_") and k != "alt_urls"} for m in merged),
+    items = sorted(({k: v for k, v in e.items() if k not in ("alt_urls", "deadline_text")} for e in kept),
                    key=lambda x: (x["start"], x["title"]))
-    urgent = sum(1 for e in items if e["deadline"]
-                 and 0 <= (dt.date.fromisoformat(e["deadline"]) - TODAY).days <= int(ec.get("urgent_days", 14)))
-    log(f"        Coming up: {plural(len(items), 'event')}, {urgent} with a deadline within "
-        f"{ec.get('urgent_days', 14)} days" + (" (left out: " + ", ".join(f"{n} {k}" for k, n in dropped.items()) + ")"
-                                               if dropped else ""))
-    return {"items": items, "show": int(ec.get("show", 6)), "urgent_days": int(ec.get("urgent_days", 14)),
-            "hide_days_after_deadline": int(ec.get("hide_days_after_deadline", 7))}
+    urgent_days = int(ec.get("urgent_days", 14))
+    urgent = sum(1 for e in items if e["deadline"] and 0 <= (dt.date.fromisoformat(e["deadline"]) - TODAY).days <= urgent_days)
+    log(f"        Coming up: {plural(len(items), 'event')}, {urgent} with a deadline within {urgent_days} days")
+    for reason, n in dropped.most_common():
+        log(f"          left out: {n} {reason}")
+    return {"items": items, "show": int(ec.get("show", 6)), "urgent_days": urgent_days,
+            "hide_days_after_deadline": grace_days, "hide_days_before_start_without_deadline": no_deadline_days}
+
+
+def write_event_report(path: pathlib.Path) -> None:
+    """A plain-text overview of every event considered, published next to the page."""
+    lines = [f"Coming up - event report, built {dt.datetime.now().strftime('%Y-%m-%d %H:%M')}",
+             "Every event the build looked at, with the deadline it found and why anything was left out.", ""]
+    for status in ("shown", "left out"):
+        rows = [r for r in EVENT_REPORT if r["status"] == status]
+        lines.append(f"=== {status.upper()} ({len(rows)}) ===")
+        for r in sorted(rows, key=lambda r: (r["reason"], r["start"] or "9999", r["title"])):
+            dl = f"deadline {r['deadline']} (\"{r['deadline_text']}\")" if r["deadline"] else "no deadline found"
+            why = f"  [{r['reason']}]" if r["reason"] else ""
+            lines.append(f"{r['start'] or '----------'}  {r['source']:<18} {short(r['title'], 70)}{why}")
+            if status == "shown" or r["deadline"]:
+                lines.append(f"{'':12}{dl}")
+            if r["url"]:
+                lines.append(f"{'':12}{r['url']}")
+        lines.append("")
+    path.write_text("\n".join(lines), encoding="utf-8")
 
 
 # ====================================================================
@@ -1548,6 +1726,9 @@ def main() -> int:
     step(n, n, "Writing the page")
     render(data, args.out, args.fragment)
     log(f"    ok  {rel(args.out / 'index.html')}")
+    if EVENT_REPORT:
+        write_event_report(args.out / "events_report.txt")
+        log(f"    ok  {rel(args.out / 'events_report.txt')} (what the calendar showed and left out, and why)")
 
     bad = [s for s in data.get("status", []) if not s["ok"]]
     say(("\n" if VERBOSE else "") + f"Done in {time.time() - T0:.0f} s. "

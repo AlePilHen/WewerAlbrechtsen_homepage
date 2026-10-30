@@ -211,7 +211,7 @@ footer summary::-webkit-details-marker { display: none; }
         <div class="card latest" id="latest"></div>
       </div>
       <div class="widget" id="events-w" hidden>
-        <div class="w-head"><span class="kicker"><span>Calendar</span><span class="src" id="events-count"></span></span><h2 class="w-title">Coming up</h2></div>
+        <div class="w-head"><span class="kicker"><span>Event calendar</span><span class="src" id="events-count"></span></span><h2 class="w-title">Courses and Conferences</h2></div>
         <div class="card" id="events"></div>
       </div>
       <div class="widget">
@@ -367,7 +367,13 @@ function comingUp() {
   if (!ev) return;
   $("events-w").hidden = false;
   const grace = ev.hide_days_after_deadline ?? 7, urgentDays = ev.urgent_days ?? 14, show = ev.show || 6;
-  const items = (ev.items || []).filter((e) => daysUntil(e.end || e.start) >= 0 && !(e.deadline && daysUntil(e.deadline) < -grace));
+  const noDeadlineDays = ev.hide_days_before_start_without_deadline ?? 10;
+  /* The same rules as the build, applied again with today's date (the page may be a few days old) */
+  const items = (ev.items || []).filter((e) =>
+    daysUntil(e.end || e.start) >= 0
+    && e.reg !== "closed"
+    && !(e.deadline && daysUntil(e.deadline) < -grace)
+    && !(e.kind !== "conference" && !e.deadline && daysUntil(e.start) < noDeadlineDays));
   $("events-count").textContent = items.length ? `${items.length} upcoming` : "";
   if (!items.length) { $("events").innerHTML = '<p class="empty">Nothing coming up in the sources right now.</p>'; return; }
   let expanded = false;
