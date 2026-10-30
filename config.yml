@@ -184,6 +184,54 @@ daily:
   motm_feed: https://pdb101.rcsb.org/motm/rss.xml
 
 # ------------------------------------------------------------------
+# Coming up: courses, events and conferences (left column)
+#
+# Rules: an event disappears once it has ended, or 7 days after its
+# registration deadline. Courses and events are shown up to
+# window_days ahead, conferences up to conference_window_days ahead.
+# Keywords: "metabol*" matches metabolism, metabolic, ...; words in
+# CAPITALS (like AI) only match exactly.
+# ------------------------------------------------------------------
+events:
+  window_days: 120
+  conference_window_days: 365
+  hide_days_after_deadline: 7
+  urgent_days: 14          # deadlines closer than this are highlighted
+  show: 5                  # shown before "Show all"
+
+  ddsa:                    # Danish Data Science Academy (events API)
+    categories: [DDSA-Organised Event, DDSA-Funded Event]
+    course_category: PhD Course
+    course_tags: [Bioinformatics, Biostatistics, Data Analysis]
+
+  science_cluster:         # NNF Science Cluster (event pages)
+    keywords: [metabol*, diabet*, obesity, endocrin*, liver, protein*, proteom*, data, AI, health]
+
+  ddea:                    # Danish Diabetes and Endocrine Academy (event pages)
+    enabled: true          # skipped automatically if the site forbids automated reading
+
+  tess:                    # ELIXIR TeSS training register
+    keywords: [proteomics, mass spectrometry, metabolomics, metabolism, diabetes, endocrinology,
+               obesity, biomarker, liver, health data, biostatistics]
+    in_person_countries: [Denmark, Sweden, Norway, Finland, Iceland]   # online courses: any country
+
+  # Conferences: list each series once. Use {year} where the address contains the year;
+  # otherwise give a page that always lists the next meeting(s).
+  # one_day: true  -> for meetings that last a single day.
+  conferences:
+    - {name: EASD Annual Meeting, url: "https://www.easd.org/annual-meeting/easd-{year}/"}
+    - {name: EASL Congress, url: "https://easl.eu/event/easl-congress-{year}/"}
+    - {name: European Congress of Endocrinology (ECE), url: "https://www.ese-hormones.org/education-and-training/events-key-dates/european-congress-of-endocrinology-ece-{year}/"}
+    - {name: HUPO World Congress, url: "https://{year}.hupo.org/"}
+    - {name: ESHG Conference, url: "https://eshg.org/conferences/future-eshg-meetings"}
+    - {name: ADA Scientific Sessions, url: "https://professional.diabetes.org/scientific-sessions"}
+    - {name: ENDO, url: "https://endocrine.org/meetings-and-events/endo-future-meetings"}
+    - {name: ASMS Conference, url: "https://www.asms.org/conferences/annual-conference/future-annual-conferences"}
+    - {name: DAPSOC Symposium, url: "https://dapsoc.org/events/", one_day: true}
+    - {name: Metabolism Day (KU), url: "https://healthsciences.ku.dk/calender/calender-{year}/metabolism-day-{year}/", one_day: true}
+
+
+# ------------------------------------------------------------------
 # Quick links
 # ------------------------------------------------------------------
 links:

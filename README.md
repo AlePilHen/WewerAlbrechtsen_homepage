@@ -104,6 +104,7 @@ Everything is in `config.yml`:
 | How far back to look for papers | `window_days:` (overall, or per tab) |
 | News feeds | `news:` (any RSS or Atom feed) |
 | Quick links | `links:` |
+| Calendar ("Coming up"): sources, keywords, conferences, time windows | `events:` |
 | Turn off a daily box | `daily:` (remove the line or set it to `false`) |
 
 **Tips for the paper searches**
@@ -142,6 +143,10 @@ Design changes (colours, layout) go in `template/index.html`.
   build opens each article page and uses the preview image it declares (`fetch_images: true` in
   `config.yml`), which adds 10–20 seconds to the build. When an item has no image, the feed's logo
   is shown, or the source name if there is no logo.
+- **Coming up** reads DDSA's events API, ELIXIR TeSS's search API, and the event pages of the NNF
+  Science Cluster, DDEA and the conference websites in `config.yml`. Pages are only read if the
+  site's robots.txt allows it. Conference dates are read from the societies' own pages each day,
+  so you only add a conference once; if a society moves its pages, the build says so.
 - **Relevance** is keyword-based. It catches most relevant papers but not all, and lets
   some noise through.
 

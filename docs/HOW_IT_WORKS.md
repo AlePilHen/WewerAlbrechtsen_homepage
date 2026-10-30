@@ -30,7 +30,11 @@ The page's own JavaScript then draws everything from that embedded data when som
 │                        ChEMBL + UniProt,  │   template/index.html
 │                        Our World in Data, │            │
 │                        RCSB PDB-101       │            ▼
-│ 5  Write the page                         │   site/index.html  (+ data.json, img/)
+│ 5  Coming up ......... DDSA, Science      │   site/index.html  (+ data.json, img/)
+│                        Cluster, DDEA,     │
+│                        TeSS, conference   │
+│                        websites           │
+│ 6  Write the page                         │
 └───────────────────────────────────────────┘            │
                                                          ▼
                                                    GitHub Pages
@@ -224,7 +228,67 @@ its chart image and first paragraph. The chart is downloaded with **`save_image(
 **PDB-101 Molecule of the Month** (`fetch_motm`): reads the newest item from the PDB-101
 feed, then opens the article page for its preview image, which is also saved to `site/img/`.
 
-### Step 5: Writing the page (`render`)
+### Step 5: Coming up (`fetch_events`)
+
+Fills the "Coming up" calendar in the left column with courses, events and conferences. Each
+source has its own function, and they all return events in the same form (`new_event()`):
+title, link, start and end date, time, place, online yes/no, source, kind
+(`course`, `event` or `conference`), registration deadline and its kind, registration type and cost.
+
+**The sources**
+
+| Function | Source | How it is read |
+|---|---|---|
+| `ev_ddsa()` | Danish Data Science Academy | DDSA's public events API (a standard WordPress events plugin). Keeps the categories in `config.yml` (DDSA-organised and -funded events) plus PhD courses with one of the listed tags |
+| `ev_science_cluster()` | NNF Science Cluster | The site's list of event pages (`events-sitemap.xml`). Pages changed in the last year are opened; the start and end come from the page's "Date" facts and the deadline from "Application Deadline". Only events whose title or summary matches a keyword are kept |
+| `ev_ddea()` | Danish Diabetes and Endocrine Academy | The events overview page and each event page. The event date is the first date on the page that isn't part of a deadline sentence. Skipped automatically if the site's robots.txt forbids automated reading |
+| `ev_tess()` | ELIXIR TeSS | One search per keyword in TeSS's events API. Kept: courses and workshops, in the Nordics or online, starting within the window, not invitation-only, and with a keyword in the title or topic tags |
+| `ev_conferences()` | Conference websites | See below |
+
+**Conference series.** Each conference in `config.yml` has one address:
+- an address with `{year}` (e.g. `easd-{year}`) is tried for this year and next year. A page that
+  doesn't exist yet (404), or that redirects to a page without the year, is skipped;
+- an address without `{year}` is a page that lists the next meeting(s); every date range on it
+  becomes one edition.
+
+Only date ranges of at most 7 days count as meetings (`max_days`), which filters out things like
+"abstract submission opens …" or a mistyped range. `one_day: true` allows single-day meetings.
+
+**Reading dates from text** (`find_dates`). Pages write dates in many ways. `normalise_for_dates()`
+first removes weekday names and commas, turns every kind of dash and the word "to" into "-",
+and removes ordinal endings ("1st"). `DATE_PATTERNS` then matches, from most to least specific:
+"30 May - 2 June 2029", "16-19 June 2027", "May 30 - June 2 2029", "June 18-21 2027",
+"2026-11-05", "8 December 2026" and "December 8 2026". English and Danish month names are
+understood. A date without a year gets the year of the page (from its address or title).
+
+**Registration** (`registration_info`). Looks for deadline phrases ("application deadline",
+"register before", "abstract submission deadline", "tilmeldingsfrist", …) followed by a date.
+A deadline without a year is placed before the event ("19 January" before a June congress).
+If several deadlines are found, the next one that hasn't passed is shown. Without a date, the
+text decides the label: "by application", "registration open", "sign-up required" or
+"no sign-up needed". `_outside_deadlines()` makes sure a deadline date is never mistaken for
+the event's own date.
+
+**Keywords** (`keyword_regex`). `metabol*` matches every word starting with "metabol"; words in
+capitals (`AI`) must match exactly, so "AI" doesn't match "air" or "said".
+
+**Robots.txt** (`allowed_by_robots`, `fetch_page`). Pages that are read as web pages rather than
+through an API are only fetched if the site's robots.txt allows automated reading.
+
+**Combining** (in `fetch_events`):
+1. Events that have ended are removed, and so are events whose deadline passed more than
+   `hide_days_after_deadline` (7) days ago.
+2. Courses and events more than `window_days` (120) ahead, and conferences more than
+   `conference_window_days` (365) ahead, are removed.
+3. The same event from two sources (same link, or same title and start date) is merged: the
+   sources are combined ("DDSA + DDEA") and missing details are filled in from either.
+4. The rest is sorted by start date.
+
+The page works out the registration label itself ("Apply by 15 Nov", "Deadline in 5 days",
+"Deadline passed 2 days ago"), using the viewer's date. That way the label is correct over a
+weekend, when the page isn't rebuilt.
+
+### Step 6: Writing the page (`render`)
 
 1. Reads `template/index.html`.
 2. Converts all data to JSON and replaces the placeholder `/*__DATA__*/null` with it.
@@ -252,6 +316,10 @@ Finally `main()` prints the summary: build time, and every source that had a pro
 | `entry_date()` | The publication date of a feed item as `YYYY-MM-DD` |
 | `term()` | Puts quotes around search terms that contain spaces or hyphens |
 | `rel()` | Shows file paths relative to the current folder in messages |
+| `find_dates()`, `normalise_for_dates()` | Find dates and date ranges in ordinary text (see step 5) |
+| `registration_info()` | Deadline and registration type from ordinary text (see step 5) |
+| `fetch_page()`, `allowed_by_robots()` | Fetch a web page, but only if the site's robots.txt allows it |
+| `html_text()`, `page_title()`, `page_summary()` | Turn a web page into plain text; read its title and short description |
 
 ---
 
@@ -274,6 +342,9 @@ Finally `main()` prints the summary: build time, and every source that had a pro
   "group_pubs":    { "example": false,
                      "latest": { "title", "authors", "journal", "date", "url", "sources" },
                      "per_year": [ { "year": 2026, "n": 21 } ] },
+  "events":        { "items": [ { "title", "url", "start", "end", "time", "where", "online", "source",
+                                "kind", "deadline", "deadline_label", "reg", "cost" } ],
+                     "show": 6, "urgent_days": 14, "hide_days_after_deadline": 7 },
   "daily":         { "spotlight": {...}, "target": {...}, "owid": {...}, "motm": {...},
                      "spotlight_enabled": true, "target_enabled": false },
   "status":        [ { "name": "News · Nature", "ok": true, "count": 15 } ]
@@ -291,6 +362,10 @@ without fetching anything.
 
 **Add a news feed.** Add an entry under `news:` in `config.yml` with `label`, `url` and
 `limit`. Add `fetch_images: true` if the feed has no images.
+
+**Add a conference.** Add a line under `events: conferences:` in `config.yml` with its name and
+the address of its yearly page (with `{year}`) or of its "future meetings" page. Run the build and
+check the conference's line in the terminal.
 
 **Add or change a paper tab.** Edit `paper_widgets:` in `config.yml`. The comments at the top
 of that section explain `all_of`, `none_of`, `fields`, `journals` and `window_days`.
@@ -320,6 +395,10 @@ browser.
 | A paper tab is always empty | The search is too narrow, or journal names don't match | Widen `window_days`, add synonyms, or check the journal abbreviation in PubMed's NLM Catalog |
 | A paper tab is very noisy | The search is too broad | Add `none_of` terms, or switch the tab to `journals: key` |
 | `!!  OpenAlex  HTTP 401` | No OpenAlex API key, or a wrong one | Add the `OPENALEX_API_KEY` secret (see the README) |
+| `!!  <conference>  no page found for …` | The society moved its pages | Find the new address and update `config.yml` |
+| `!!  <conference>  page found, but no dates recognised` | The dates are written in an unusual way, or are shown as an image | Check the page; if needed, add the format to `DATE_PATTERNS` |
+| `!!  DDEA  … does not allow automated reading` | The site's robots.txt forbids it | Nothing to fix: DDEA events still appear when DDSA lists them |
+| An irrelevant course in Coming up | A broad DDSA tag or TeSS keyword | Remove the tag or keyword in `config.yml` |
 | A recent group paper is missing | Not in OpenAlex or PubMed yet, or the member's ORCID isn't linked to it | Check the paper's page in OpenAlex; ask the member to link the paper in their ORCID record |
 | News images missing | The publisher blocks automated page requests, or changed its pages | The page falls back to the logo or name tile; nothing to fix unless it's permanent |
 | `could not read the article type` | Nature changed where pages state the article type | The filter then keeps all items; update `TYPE_PATTERNS` in `build.py` |

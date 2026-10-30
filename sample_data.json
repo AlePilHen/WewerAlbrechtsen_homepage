@@ -449,6 +449,13 @@
    "label": "Nature",
    "items": [
     {
+     "title": "<i>De novo</i> design of enantioselective artificial metalloenzyme photocatalysts",
+     "url": "https://www.nature.com/articles/s41586-026-11317-6",
+     "source": "Nature",
+     "date": "2026-10-21",
+     "image": ""
+    },
+    {
      "title": "Briefing Chat: An invisible tattoo that appears under UV light – and then disappears",
      "url": "https://www.nature.com/articles/d41586-026-03341-3",
      "source": "Nature",
@@ -789,6 +796,238 @@
    "name": "PDB Molecule of the Month",
    "ok": true,
    "count": 1
+  },
+  {
+   "name": "Events · DDSA",
+   "ok": true,
+   "count": 3
+  },
+  {
+   "name": "Events · Science Cluster",
+   "ok": true,
+   "count": 1
+  },
+  {
+   "name": "Events · DDEA",
+   "ok": false,
+   "error": "not checked for this example"
+  },
+  {
+   "name": "Events · TeSS",
+   "ok": true,
+   "count": 0
+  },
+  {
+   "name": "Conference series (9 of 10)",
+   "ok": true,
+   "count": 9
+  },
+  {
+   "name": "Conference · Metabolism Day (KU)",
+   "ok": false,
+   "error": "2027 date not announced yet"
   }
- ]
+ ],
+ "events": {
+  "items": [
+   {
+    "title": "Data Visualisation Workshop: From Theoretical Foundations to Implementation and Communication",
+    "url": "https://ddsa.dk/event/data-visualisation-workshop-from-theoretical-foundations-to-implementation-and-communication/",
+    "start": "2026-11-05",
+    "end": "2026-11-06",
+    "time": "09:00–16:00",
+    "where": "Aarhus C",
+    "online": false,
+    "source": "DDSA",
+    "kind": "event",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "required",
+    "cost": "Free"
+   },
+   {
+    "title": "Music Therapy Research – November 2026",
+    "url": "https://ddsa.dk/event/music-therapy-research-november-2026/",
+    "start": "2026-11-08",
+    "end": "2026-11-13",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "DDSA",
+    "kind": "course",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "required",
+    "cost": ""
+   },
+   {
+    "title": "Fundamentals of the PhD education at SCIENCE – module 2 – K12",
+    "url": "https://ddsa.dk/event/fundamentals-of-the-phd-education-at-science-module-2-k12/",
+    "start": "2026-11-09",
+    "end": "2026-11-13",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "DDSA",
+    "kind": "course",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "required",
+    "cost": ""
+   },
+   {
+    "title": "DAPSOC Symposium 2026",
+    "url": "https://dapsoc.org/events/",
+    "start": "2026-12-08",
+    "end": "2026-12-08",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "open",
+    "cost": ""
+   },
+   {
+    "title": "Genomic Mechanisms of Disease 2027",
+    "url": "https://sciencecluster.dk/event/conference-broad-2027/",
+    "start": "2027-03-08",
+    "end": "2027-03-12",
+    "time": "17:30",
+    "where": "Hillerød",
+    "online": false,
+    "source": "Science Cluster",
+    "kind": "conference",
+    "deadline": "2026-11-15",
+    "deadline_label": "Application",
+    "reg": "application",
+    "cost": "Free"
+   },
+   {
+    "title": "European Congress of Endocrinology (ECE) 2027",
+    "url": "https://www.ese-hormones.org/education-and-training/events-key-dates/european-congress-of-endocrinology-ece-2027/",
+    "start": "2027-05-08",
+    "end": "2027-05-11",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   },
+   {
+    "title": "ENDO 2027",
+    "url": "https://endocrine.org/meetings-and-events/endo-future-meetings",
+    "start": "2027-06-05",
+    "end": "2027-06-07",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   },
+   {
+    "title": "ASMS Conference 2027",
+    "url": "https://www.asms.org/conferences/annual-conference/future-annual-conferences",
+    "start": "2027-06-06",
+    "end": "2027-06-10",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   },
+   {
+    "title": "ESHG Conference 2027",
+    "url": "https://eshg.org/conferences/future-eshg-meetings",
+    "start": "2027-06-12",
+    "end": "2027-06-15",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   },
+   {
+    "title": "EASL Congress 2027",
+    "url": "https://easl.eu/event/easl-congress-2027/",
+    "start": "2027-06-16",
+    "end": "2027-06-19",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "2027-01-19",
+    "deadline_label": "Abstracts",
+    "reg": "required",
+    "cost": ""
+   },
+   {
+    "title": "ADA Scientific Sessions 2027",
+    "url": "https://professional.diabetes.org/scientific-sessions",
+    "start": "2027-06-18",
+    "end": "2027-06-21",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   },
+   {
+    "title": "EASD Annual Meeting 2027",
+    "url": "https://www.easd.org/annual-meeting/easd-2027/",
+    "start": "2027-09-20",
+    "end": "2027-09-24",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   },
+   {
+    "title": "HUPO World Congress 2027",
+    "url": "https://2027.hupo.org/",
+    "start": "2027-10-11",
+    "end": "2027-10-15",
+    "time": "",
+    "where": "",
+    "online": false,
+    "source": "Conference",
+    "kind": "conference",
+    "deadline": "",
+    "deadline_label": "",
+    "reg": "",
+    "cost": ""
+   }
+  ],
+  "show": 6,
+  "urgent_days": 14,
+  "hide_days_after_deadline": 7
+ }
 }
