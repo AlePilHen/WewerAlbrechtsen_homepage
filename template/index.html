@@ -59,11 +59,13 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 
 .sub { font-size: 13px; color: var(--muted); }
 .search { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
 .search input {
-  font: inherit; width: min(300px, 100%); padding: 8px 12px; border-radius: var(--radius);
+  font: inherit; width: 300px; max-width: 100%; padding: 8px 12px; border-radius: var(--radius);
   border: 1px solid var(--line); background: var(--surface); color: var(--fg);
 }
 .search a { font-size: 13px; padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--muted); white-space: nowrap; }
 .search a:hover { color: var(--blue); border-color: var(--blue); }
+/* The three buttons move as one group: next to the search bar, or all together below it */
+.search-links { display: flex; gap: 8px; flex-wrap: nowrap; }
 
 /* Columns, each with its own colour */
 .cols { display: grid; grid-template-columns: 280px minmax(0, 1fr) 320px; gap: 26px; align-items: start; }
@@ -199,9 +201,11 @@ footer summary::-webkit-details-marker { display: none; }
     <div class="search" role="search">
       <label for="q" hidden>Search a gene, protein or topic</label>
       <input id="q" type="search" placeholder="Search a gene, protein or topic…" autocomplete="off">
-      <a id="q-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed ↗</a>
-      <a id="q-uniprot" href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt ↗</a>
-      <a id="q-ot" href="https://platform.opentargets.org/" target="_blank" rel="noopener">Open Targets ↗</a>
+      <span class="search-links">
+        <a id="q-pubmed" href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" rel="noopener">PubMed ↗</a>
+        <a id="q-uniprot" href="https://www.uniprot.org/" target="_blank" rel="noopener">UniProt ↗</a>
+        <a id="q-ot" href="https://platform.opentargets.org/" target="_blank" rel="noopener">Open Targets ↗</a>
+      </span>
     </div>
   </header>
 
@@ -212,7 +216,7 @@ footer summary::-webkit-details-marker { display: none; }
         <div class="card latest" id="latest"></div>
       </div>
       <div class="widget" id="events-w" hidden>
-        <div class="w-head"><span class="kicker"><span>Calendar</span><span class="src" id="events-count"></span></span><h2 class="w-title">Coming up</h2></div>
+        <div class="w-head"><span class="kicker"><span>Event calendar</span><span class="src" id="events-count"></span></span><h2 class="w-title">Courses and Conferences</h2></div>
         <div class="card" id="events"></div>
       </div>
       <div class="widget">
