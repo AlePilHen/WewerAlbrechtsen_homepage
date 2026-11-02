@@ -39,6 +39,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   background: var(--bg); color: var(--fg);
   font-family: var(--font-body); font-size: 14.5px; line-height: 1.45;
@@ -211,7 +212,7 @@ footer summary::-webkit-details-marker { display: none; }
         <div class="card latest" id="latest"></div>
       </div>
       <div class="widget" id="events-w" hidden>
-        <div class="w-head"><span class="kicker"><span>Event calendar</span><span class="src" id="events-count"></span></span><h2 class="w-title">Courses and Conferences</h2></div>
+        <div class="w-head"><span class="kicker"><span>Calendar</span><span class="src" id="events-count"></span></span><h2 class="w-title">Coming up</h2></div>
         <div class="card" id="events"></div>
       </div>
       <div class="widget">
