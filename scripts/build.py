@@ -437,6 +437,47 @@ def mark_members(papers: list[dict], member_orcids: list[str]) -> dict[str, str]
     return {o: (c.most_common(1)[0][0] if c else o) for o, c in seen_names.items()}
 
 
+# Group papers the build left out, and why (written to publications_report.txt)
+PUB_REPORT: list[dict] = []
+
+
+def pub_row(p: dict, names: dict[str, str]) -> dict:
+    last = p["authors"][-1] if p["authors"] else {}
+    return {"date": p["date"], "title": plain(p["title"]), "journal": p["journal"], "doi": p["doi"],
+            "last_author": names.get(last.get("member", ""), last.get("name", "")) or "(no authors listed)"}
+
+
+def pub_left_out(p: dict, names: dict[str, str], reason: str) -> None:
+    PUB_REPORT.append({**pub_row(p, names), "status": "left out", "reason": reason})
+
+
+def write_pub_report(path: pathlib.Path) -> None:
+    """A plain-text list of the group papers that were left out (or kept by exception), and why."""
+    lines = [f"Group publications - report, built {dt.datetime.now().strftime('%Y-%m-%d %H:%M')}",
+             "Papers found for the group's ORCIDs that are NOT on the publications page, and why.",
+             "To keep one anyway, add its DOI under include_papers in config.yml.", ""]
+    groups = [("LEFT OUT: last author is not the PI or a section lead",
+               lambda r: r["reason"] == "last author is not the PI or a section lead"),
+              ("LEFT OUT: listed in exclude_papers", lambda r: r["reason"] == "listed in exclude_papers"),
+              ("KEPT: listed in include_papers", lambda r: r["status"] == "kept"),
+              ("NOT FOUND: listed in include_papers", lambda r: r["status"] == "not found"),
+              ("LEFT OUT: before the PI's first last-author paper",
+               lambda r: r["reason"] == "before the PI's first last-author paper")]
+    for heading, test in groups:
+        rows = sorted((r for r in PUB_REPORT if test(r)), key=lambda r: r["date"], reverse=True)
+        if not rows:
+            continue
+        lines.append(f"=== {heading} ({len(rows)}) ===")
+        for r in rows:
+            if r["title"]:
+                lines.append(f"{r['date'] or '----------'}  {short(r['title'], 90)}")
+                lines.append(f"{'':12}{r['journal']} · last author: {r['last_author']}")
+            if r["doi"]:
+                lines.append(f"{'':12}doi:{r['doi']}")
+        lines.append("")
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
 def previous_publications(cfg: dict) -> list[dict]:
     """The list published by the last successful build (used if a source fails today)."""
     site = str(cfg.get("site_url") or "").strip()
@@ -454,8 +495,12 @@ def fetch_group_pubs(cfg: dict) -> dict:
     g = cfg.get("group", {})
     orcids = [norm_orcid(o) for o in g.get("orcids") or [] if str(o).strip()]
     pi = norm_orcid(g.get("pi_orcid"))
-    if pi and pi not in orcids:
-        orcids.append(pi)
+    sections = [{"name": str(s.get("name", "")).strip(), "lead": norm_orcid(s.get("lead"))}
+                for s in g.get("sections") or [] if s.get("name") and s.get("lead")]
+    # The PI and the section leads are always searched for and treated as group members
+    for o in [pi] + [s["lead"] for s in sections]:
+        if o and o not in orcids:
+            orcids.append(o)
     if not orcids and not g.get("extra_query"):
         fail("Group publications", "no ORCIDs in config.yml, showing example")
         return example_group_pubs()
@@ -527,23 +572,54 @@ def fetch_group_pubs(cfg: dict) -> dict:
     if not merged:
         return example_group_pubs()
 
-    # 4) Exclusions, group members, the PI's start date and sections
-    excluded = {norm_doi(d) for d in g.get("exclude_papers") or []}
-    papers = sorted((p for p in merged.values() if not (p["doi"] and p["doi"] in excluded)), key=lambda p: p["date"])
+    # 4) Exclusions, group members, the PI's start date, the last-author rule and sections
+    PUB_REPORT.clear()
+    excluded = {norm_doi(d) for d in g.get("exclude_papers") or [] if str(d).strip()}
+    always_keep = {norm_doi(d) for d in g.get("include_papers") or [] if str(d).strip()}
+    papers = sorted(merged.values(), key=lambda p: p["date"])
     names = mark_members(papers, orcids)
+    for p in papers:
+        if p["doi"] and p["doi"] in excluded:
+            pub_left_out(p, names, "listed in exclude_papers")
+    papers = [p for p in papers if not (p["doi"] and p["doi"] in excluded)]
+
     since = ""
     if pi:
         firsts = [p["date"] for p in papers if p["authors"] and p["authors"][-1].get("member") == pi]
         if firsts:
             since = min(firsts)
+            for p in papers:
+                if p["date"] < since:
+                    pub_left_out(p, names, "before the PI's first last-author paper")
             before = len(papers)
             papers = [p for p in papers if p["date"] >= since]
             log(f"        from {since} ({names.get(pi, pi)}'s first last-author paper): "
                 f"{plural(len(papers), 'paper')}, {before - len(papers)} earlier left out")
         else:
             log("        no paper with the PI as last author found, so no start date applied")
-    sections = [{"name": str(s.get("name", "")).strip(), "lead": norm_orcid(s.get("lead"))}
-                for s in g.get("sections") or [] if s.get("name") and s.get("lead")]
+
+    # Only papers with the PI or a section lead as LAST author (unless listed in include_papers)
+    seniors = {o for o in [pi] + [s["lead"] for s in sections] if o}
+    if seniors:
+        kept = []
+        for p in papers:
+            last = p["authors"][-1].get("member", "") if p["authors"] else ""
+            if last in seniors:
+                kept.append(p)
+            elif p["doi"] and p["doi"] in always_keep:
+                kept.append(p)
+                PUB_REPORT.append({**pub_row(p, names), "status": "kept", "reason": "listed in include_papers"})
+            else:
+                pub_left_out(p, names, "last author is not the PI or a section lead")
+        log(f"        last author is the PI or a section lead: {plural(len(kept), 'paper')} kept, "
+            f"{len(papers) - len(kept)} left out (see publications_report.txt)")
+        papers = kept
+    found = {p["doi"] for p in merged.values() if p["doi"]}
+    for d in sorted(always_keep - found):
+        log(f"    !!  include_papers: {d} was not found in OpenAlex or PubMed (is a member's ORCID linked to it?)")
+        PUB_REPORT.append({"status": "not found", "reason": "listed in include_papers, but not found by the search",
+                           "date": "", "title": "", "journal": "", "last_author": "", "doi": d})
+
     for p in papers:
         senior = {a.get("member") for a in p["authors"][-2:] if a.get("member")}
         p["sections"] = [s["name"] for s in sections if s["lead"] in senior]
@@ -567,7 +643,10 @@ def fetch_group_pubs(cfg: dict) -> dict:
     publications = {
         "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"),
         "pi": {"orcid": pi, "name": names.get(pi, ""), "since": since},
-        "members": sorted(({"orcid": o, "name": n} for o, n in names.items()), key=lambda m: m["name"].split()[-1:]),
+        # only members who appear on at least one paper in the list (for the "Group member" filter)
+        "members": sorted(({"orcid": o, "name": n} for o, n in names.items()
+                           if any(a.get("member") == o for p in papers for a in p["authors"])),
+                          key=lambda m: m["name"].split()[-1:]),
         "sections": [s["name"] for s in sections],
         "papers": [{"title": p["title"], "journal": p["journal"], "date": p["date"], "type": p["type"],
                     "doi": p["doi"], "pmid": p["pmid"], "url": p["url"], "abstract": p["abstract"],
@@ -1918,6 +1997,9 @@ def main() -> int:
     if publications:
         log(f"    ok  {rel(args.out / 'publications.html')} and publications.json "
             f"({plural(len(publications['papers']), 'paper')})")
+    if PUB_REPORT:
+        write_pub_report(args.out / "publications_report.txt")
+        log(f"    ok  {rel(args.out / 'publications_report.txt')} (group papers left out, and why)")
     if EVENT_REPORT:
         write_event_report(args.out / "events_report.txt")
         log(f"    ok  {rel(args.out / 'events_report.txt')} (what the calendar showed and left out, and why)")

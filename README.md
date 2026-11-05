@@ -71,9 +71,12 @@ group:
   orcids:
     - "0000-0002-1234-5678"
     - "0000-0001-8765-4321"
-  # Optional. A paper belongs to a section when the lead is one of the last two authors
+  # Optional. A paper belongs to a section when the lead is one of the last two authors.
+  # Papers with a section lead as last author are included, like the PI's
   sections:
     - {name: "Glucagon", lead: "0000-0002-1234-5678"}
+  # Optional. DOIs of papers to keep even though the last author isn't the PI or a lead
+  include_papers: []
   # Optional. DOIs of papers to leave out (e.g. a correction notice listed as an article)
   exclude_papers: []
 ```
@@ -82,8 +85,13 @@ Click **Commit changes**. The page rebuilds within a few minutes. The "Latest pu
 box and the chart switch from example to real data, and an **All publications →** link
 appears, leading to the publications page.
 
-**The publications page** lists every paper since the PI's first last-author paper. You can
-search titles and abstracts, filter by year, journal, type, group member (and their author
+**The publications page** lists every paper since the PI's first last-author paper that has
+the PI or a section lead as **last** author. Papers that are left out are listed, with the
+reason, in `publications_report.txt` next to the page
+(`https://…/WewerAlbrechtsen_homepage/publications_report.txt`); to keep one anyway, add its DOI
+under `include_papers`.
+
+On the page you can search titles and abstracts, filter by year, journal, type, group member (and their author
 position: first, last or one of the last two) and section, sort the list, and download what
 you see as a spreadsheet (CSV) or for a reference manager (BibTeX). The list is also saved as
 `publications.json` next to the page.

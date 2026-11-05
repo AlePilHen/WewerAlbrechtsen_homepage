@@ -28,6 +28,12 @@ group:
     {name: "Clinical section",    lead: "0000-0003-4000-5669"},
     {name: "Proteomics section",  lead: "0009-0005-2855-208X"}
   ]
+  # Only papers with the PI or a section lead as LAST author are included
+  # (the leads are searched for automatically, even if not listed under orcids).
+  # Papers left out are listed in publications_report.txt next to the page.
+  # Papers to keep anyway (by DOI), e.g. shared senior authorship where the
+  # PI is second to last, or consortium papers:
+  include_papers: []
   # Papers wrongly attributed to the group (by DOI), left out everywhere:
   exclude_papers: []
     # - 10.1000/example-doi

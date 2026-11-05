@@ -169,7 +169,7 @@ because each catches papers the other misses:
 | Abstracts | Usually, rebuilt from a word index (`openalex_abstract()`) | Usually, as written by the journal |
 | Searched by | ORCID | ORCID, plus the optional `extra_query` (e.g. a name search) |
 
-The ORCIDs searched are the ones in `group: orcids:` plus `pi_orcid`.
+The ORCIDs searched are the ones in `group: orcids:`, plus `pi_orcid` and the section leads.
 
 What happens:
 
@@ -202,24 +202,31 @@ What happens:
    publications page.
 5. **Exclusions.** Any DOI listed in `exclude_papers` is removed.
 6. **Group members** (`mark_members`). An author is a group member when their ORCID is in
-   `config.yml`. Some papers have no ORCIDs for their authors; there, an author is matched by
+   `config.yml` (under `orcids`, `pi_orcid` or as a section lead). Some papers have no ORCIDs for their authors; there, an author is matched by
    surname and first initial, using the spellings the member has on their other papers
    (`_name_keys`, which also treats the different kinds of hyphen as the same). A name pair
    shared by two members is never used. Each member is shown with the spelling of their name
    they use most often.
 7. **Start date.** The earliest paper with the PI (`pi_orcid`) as **last** author sets the
    start date. Earlier papers (e.g. from the PI's own PhD) are left out.
-8. **Sections.** Each section in `config.yml` has one lead (an ORCID). A paper belongs to a
+8. **Last author.** Only papers whose **last** author is the PI or one of the section leads
+   are kept. Papers whose DOI is listed in `include_papers` are kept anyway (for shared senior
+   authorship, where the PI is second to last, or consortium papers, where the consortium name
+   comes last). If there is no PI and no section lead in `config.yml`, this step is skipped.
+9. **Sections.** Each section in `config.yml` has one lead (an ORCID). A paper belongs to a
    section when the lead is one of the **last two** authors. A paper can belong to several
    sections, or none.
-9. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
+10. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
    only in PubMed, how many have abstracts, and lists recent papers that are "not yet in PubMed".
-10. **Latest publication** is the paper with the newest date that is not in the future
+11. **Latest publication** is the paper with the newest date that is not in the future
     (journals sometimes date a print issue ahead). The page shows which sources found it.
-11. **Papers per year** counts the papers by year, for the last eight years.
+12. **Papers per year** counts the papers by year, for the last eight years.
 
 The full list goes to `site/publications.json` and is embedded in `site/publications.html`
-(see step 6).
+(see step 6). Every paper that was found but left out (by the start date, the last-author rule
+or `exclude_papers`) is listed with its last author in `site/publications_report.txt`
+(`PUB_REPORT`, `write_pub_report`). It also lists the papers kept through `include_papers`,
+and any DOI in `include_papers` that the search didn't find.
 
 If there are no ORCIDs in `config.yml`, or both sources fail and there is no previous list,
 **`example_group_pubs()`** returns a clearly marked example instead, and no publications page
@@ -347,7 +354,7 @@ weekend, when the page isn't rebuilt.
    (placeholder `/*__PUBS__*/null`) and writes `site/publications.html` and
    `site/publications.json`. The dashboard then shows an "All publications →" link under
    "Latest publication".
-6. Writes `site/events_report.txt` (see step 5).
+6. Writes `site/publications_report.txt` (see step 3) and `site/events_report.txt` (see step 5).
 
 #### The publications page
 
@@ -469,6 +476,9 @@ The lead does not have to be in `orcids:`, but usually is.
 
 **Remove a paper from the list.** Add its DOI under `group: exclude_papers:`.
 
+**Keep a paper that the last-author rule leaves out.** Find it in `publications_report.txt`
+and add its DOI under `group: include_papers:`.
+
 **Change the design.** Everything visual is in `template/index.html`. Colours are defined
 once, at the top of the `<style>` block, for light and dark mode. To try changes quickly, use
 `python scripts/build.py --sample sample_data.json` and refresh `site/index.html` in the
@@ -492,6 +502,8 @@ browser.
 | A recent group paper is missing | Not in OpenAlex or PubMed yet, or the member's ORCID isn't linked to it | Check the paper's page in OpenAlex; ask the member to link the paper in their ORCID record |
 | A group member's name isn't in colour on some papers | The paper has no ORCIDs and the member's name is spelled differently there, or two members share surname and first initial | Ask the member to link the paper in their ORCID record |
 | A paper is in the wrong section, or in none | The section lead isn't among the last two authors, or their ORCID is missing on that paper | Check the author list on the publications page. Sections are decided by author position only |
+| A group paper is missing from the publications page | Its last author isn't the PI or a section lead, or the last author wasn't recognised (no ORCID, different spelling) | Look it up in `publications_report.txt`; if it should be there, add its DOI to `include_papers` |
+| `!!  include_papers: … was not found` | The paper isn't linked to any of the group's ORCIDs in OpenAlex or PubMed, or the DOI is mistyped | Check the DOI; ask the member to link the paper in their ORCID record |
 | A non-research item appears (e.g. a correction notice) | The source labels it as an article | Add its DOI to `exclude_papers` |
 | `a source failed: kept N papers from the previously published list` | OpenAlex or PubMed failed today | Nothing to do if it's a one-off; check the `!!` line for the reason |
 | News images missing | The publisher blocks automated page requests, or changed its pages | The page falls back to the logo or name tile; nothing to fix unless it's permanent |
