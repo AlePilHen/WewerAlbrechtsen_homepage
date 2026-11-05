@@ -641,11 +641,11 @@
  "group_pubs": {
   "example": true,
   "latest": {
-   "title": "Proteomic profiling of liver and plasma uncovers biomarkers and mechanisms in patients with primary biliary cholangitis",
-   "authors": "Jesper Sloth Kellemann, Anne-Sofie Houlberg Jensen, Annelaura Bach Nielsen, …, Nicolai J. Wewer Albrechtsen",
-   "journal": "Communications Medicine",
-   "date": "2026-10-01",
-   "url": "https://doi.org/10.1038/s43856-026-01924-9",
+   "title": "Single-Pass Perfusion of the Mouse Kidney In Situ for Functional and Pharmacological Studies",
+   "journal": "Journal of Visualized Experiments",
+   "date": "2026-11-03",
+   "url": "https://doi.org/10.3791/74256",
+   "authors": "Caroline Hansen, Rune E. Kuhre, Cesar R. Romero-Leguizamón, …, Marie Winther‐Sørensen",
    "sources": [
     "OpenAlex"
    ]
@@ -683,7 +683,8 @@
     "year": 2026,
     "n": 21
    }
-  ]
+  ],
+  "has_publications": true
  },
  "daily": {
   "target": {
@@ -1090,5 +1091,324 @@
   "urgent_days": 14,
   "hide_days_after_deadline": 7,
   "hide_days_before_start_without_deadline": 10
+ },
+ "publications": {
+  "generated": "2026-11-05T07:00+00:00",
+  "pi": {
+   "orcid": "0000-0003-4230-5753",
+   "name": "Nicolai J. Wewer Albrechtsen",
+   "since": ""
+  },
+  "members": [
+   {
+    "orcid": "0000-0003-4230-5753",
+    "name": "Nicolai J. Wewer Albrechtsen"
+   }
+  ],
+  "sections": [
+   "Example section"
+  ],
+  "papers": [
+   {
+    "title": "Single-Pass Perfusion of the Mouse Kidney In Situ for Functional and Pharmacological Studies",
+    "journal": "Journal of Visualized Experiments",
+    "date": "2026-11-03",
+    "type": "Methods",
+    "doi": "10.3791/74256",
+    "pmid": "",
+    "url": "https://doi.org/10.3791/74256",
+    "abstract": "",
+    "sources": [
+     "OpenAlex"
+    ],
+    "authors": [
+     {
+      "n": "Caroline Hansen",
+      "o": "",
+      "m": ""
+     },
+     {
+      "n": "Rune E. Kuhre",
+      "o": "0000-0003-4787-340X",
+      "m": ""
+     },
+     {
+      "n": "Cesar R. Romero-Leguizamón",
+      "o": "",
+      "m": ""
+     },
+     {
+      "n": "Nicolai J. Wewer Albrechtsen",
+      "o": "0000-0003-4230-5753",
+      "m": "0000-0003-4230-5753"
+     },
+     {
+      "n": "Marie Winther‐Sørensen",
+      "o": "0000-0003-2144-1385",
+      "m": ""
+     }
+    ],
+    "sections": [
+     "Example section"
+    ]
+   },
+   {
+    "title": "Exogenous Glucagon Acutely Reduces Insulin Clearance in Healthy Humans",
+    "journal": "Journal of the Endocrine Society",
+    "date": "2026-10-30",
+    "type": "Article",
+    "doi": "10.1210/jendso/bvag257",
+    "pmid": "",
+    "url": "https://doi.org/10.1210/jendso/bvag257",
+    "abstract": "",
+    "sources": [
+     "OpenAlex"
+    ],
+    "authors": [
+     {
+      "n": "Nina Lerberg Hansen",
+      "o": "0000-0001-6528-5615",
+      "m": ""
+     },
+     {
+      "n": "Sophie Betty Brock Johnsen",
+      "o": "0009-0002-7258-3017",
+      "m": ""
+     },
+     {
+      "n": "Elvar M. S. Jóhönnuson",
+      "o": "0009-0006-6031-1857",
+      "m": ""
+     },
+     {
+      "n": "Josephine Fisker-Andersen",
+      "o": "0009-0006-0436-2393",
+      "m": ""
+     },
+     {
+      "n": "Christian M. Hansen",
+      "o": "0009-0005-7609-3308",
+      "m": ""
+     },
+     {
+      "n": "Anton Born",
+      "o": "0009-0005-8242-357X",
+      "m": ""
+     },
+     {
+      "n": "Marie Winther‐Sørensen",
+      "o": "0000-0003-2144-1385",
+      "m": ""
+     },
+     {
+      "n": "Sasha A. S. Kjeldsen",
+      "o": "0000-0003-4000-5669",
+      "m": ""
+     },
+     {
+      "n": "Nicolai J. Wewer Albrechtsen",
+      "o": "0000-0003-4230-5753",
+      "m": "0000-0003-4230-5753"
+     }
+    ],
+    "sections": [
+     "Example section"
+    ]
+   },
+   {
+    "title": "Proteomic profiling of liver and plasma uncovers biomarkers and mechanisms in patients with primary biliary cholangitis",
+    "journal": "Communications Medicine",
+    "date": "2026-10-01",
+    "type": "Article",
+    "doi": "10.1038/s43856-026-01924-9",
+    "pmid": "",
+    "url": "https://doi.org/10.1038/s43856-026-01924-9",
+    "abstract": "",
+    "sources": [
+     "OpenAlex"
+    ],
+    "authors": [
+     {
+      "n": "Jesper Sloth Kellemann",
+      "o": "0009-0006-2200-8099",
+      "m": ""
+     },
+     {
+      "n": "Anne‐Sofie Houlberg Jensen",
+      "o": "0000-0002-5982-8684",
+      "m": ""
+     },
+     {
+      "n": "Annelaura Bach Nielsen",
+      "o": "0009-0005-2855-208X",
+      "m": ""
+     },
+     {
+      "n": "Mikkel Parsberg Werge",
+      "o": "0000-0002-9980-1072",
+      "m": ""
+     },
+     {
+      "n": "Elias Badal Rashu",
+      "o": "0000-0002-9958-9024",
+      "m": ""
+     },
+     {
+      "n": "Liv Eline Hetland",
+      "o": "0000-0001-8753-4096",
+      "m": ""
+     },
+     {
+      "n": "Mira Thing",
+      "o": "0009-0009-8924-9534",
+      "m": ""
+     },
+     {
+      "n": "Puria Nabilou",
+      "o": "0000-0002-4764-4423",
+      "m": ""
+     },
+     {
+      "n": "Johan M. Burisch",
+      "o": "0000-0002-3312-5139",
+      "m": ""
+     },
+     {
+      "n": "Anders Ellekaer Junker",
+      "o": "0000-0002-4804-8308",
+      "m": ""
+     },
+     {
+      "n": "Lise Hobolth",
+      "o": "0000-0002-7607-3551",
+      "m": ""
+     },
+     {
+      "n": "Christian Mortensen",
+      "o": "0000-0003-3738-168X",
+      "m": ""
+     },
+     {
+      "n": "Flemming Tofteng",
+      "o": "",
+      "m": ""
+     },
+     {
+      "n": "Flemming Bendtsen",
+      "o": "0000-0002-8419-2104",
+      "m": ""
+     },
+     {
+      "n": "Sasha A. S. Kjeldsen",
+      "o": "0000-0003-4000-5669",
+      "m": ""
+     },
+     {
+      "n": "Søren Møller",
+      "o": "",
+      "m": ""
+     },
+     {
+      "n": "Mogens Vyberg",
+      "o": "0000-0002-6392-9517",
+      "m": ""
+     },
+     {
+      "n": "Reza Serizawa",
+      "o": "0000-0002-3054-8689",
+      "m": ""
+     },
+     {
+      "n": "Marie Winther‐Sørensen",
+      "o": "0000-0003-2144-1385",
+      "m": ""
+     },
+     {
+      "n": "Henriette Ytting",
+      "o": "0000-0001-5018-5232",
+      "m": ""
+     },
+     {
+      "n": "Lise Lotte Gluud",
+      "o": "0000-0002-9462-4468",
+      "m": ""
+     },
+     {
+      "n": "Nicolai J. Wewer Albrechtsen",
+      "o": "0000-0003-4230-5753",
+      "m": "0000-0003-4230-5753"
+     }
+    ],
+    "sections": [
+     "Example section"
+    ]
+   },
+   {
+    "title": "Metabolic control by liver–kidney crosstalk and glucagon in health and disease",
+    "journal": "Nature Reviews Nephrology",
+    "date": "2026-09-29",
+    "type": "Review",
+    "doi": "10.1038/s41581-026-01111-y",
+    "pmid": "",
+    "url": "https://doi.org/10.1038/s41581-026-01111-y",
+    "abstract": "",
+    "sources": [
+     "OpenAlex"
+    ],
+    "authors": [
+     {
+      "n": "Volker Vallon",
+      "o": "0000-0002-9211-2063",
+      "m": ""
+     },
+     {
+      "n": "Nicolai J. Wewer Albrechtsen",
+      "o": "0000-0003-4230-5753",
+      "m": "0000-0003-4230-5753"
+     }
+    ],
+    "sections": [
+     "Example section"
+    ]
+   },
+   {
+    "title": "Differential somatostatin sensitivity of corticotropic and somatotropic responses following amino acid infusion",
+    "journal": "Endocrine Connections",
+    "date": "2026-09-01",
+    "type": "Article",
+    "doi": "10.1530/ec-26-0537",
+    "pmid": "",
+    "url": "https://doi.org/10.1530/ec-26-0537",
+    "abstract": "",
+    "sources": [
+     "OpenAlex"
+    ],
+    "authors": [
+     {
+      "n": "Elvar M. S. Jóhönnuson",
+      "o": "0009-0006-6031-1857",
+      "m": ""
+     },
+     {
+      "n": "Josephine Reiche",
+      "o": "",
+      "m": ""
+     },
+     {
+      "n": "Michael M. Richter",
+      "o": "0000-0002-3861-8469",
+      "m": ""
+     },
+     {
+      "n": "Nicolai J. Wewer Albrechtsen",
+      "o": "0000-0003-4230-5753",
+      "m": "0000-0003-4230-5753"
+     }
+    ],
+    "sections": [
+     "Example section"
+    ]
+   }
+  ]
  }
 }

@@ -1,8 +1,9 @@
 # Wewer Albrechtsen Group dashboard
 
 A start page for the group: new papers in the group's fields, science news, the group's
-latest publication, and three daily boxes (target of the day, a data insight from
-Our World in Data, and PDB-101's Molecule of the Month).
+latest publication, a calendar of courses and conferences, and daily boxes (Protein
+Spotlight, a data insight from Our World in Data, and PDB-101's Molecule of the Month).
+A second page lists all of the group's publications, with search and filters.
 
 It is a static web page. Once a day, GitHub Actions fetches fresh data and republishes
 the page on GitHub Pages. There is no server to run and it costs nothing.
@@ -11,9 +12,10 @@ the page on GitHub Pages. There is no server to run and it costs nothing.
 config.yml ─┐                     ┌─ Europe PMC        (new papers; PubMed cross-check)
 template/  ─┼─► scripts/build.py ─┼─ OpenAlex          (group publications)
             │         │           ├─ RSS feeds         (news)
-            │         │           ├─ Protein Spotlight, ChEMBL + UniProt
-            │         ▼           ├─ Our World in Data (data insight)
-            │   site/index.html   └─ RCSB PDB-101      (molecule of the month)
+            │         │           ├─ Protein Spotlight, Our World in Data, PDB-101
+            │         │           └─ DDSA, DDEA, TeSS, … (courses and conferences)
+            │         ▼
+            │   site/index.html, site/publications.html
             └──────────► GitHub Pages
 ```
 
@@ -56,23 +58,46 @@ in `.github/workflows/build.yml`.
 
 ## 3. Add the group's publications
 
-Open `config.yml` on GitHub, click the pencil icon, and add the members' ORCIDs:
+Open `config.yml` on GitHub, click the pencil icon, and fill in these settings:
 
 ```yaml
+# at the top of the file: the address of the published page
+site_url: https://alepilhen.github.io/WewerAlbrechtsen_homepage/
+
 group:
+  # The PI. Sets the start of the list: the first paper with this person as last author
+  pi_orcid: "0000-0003-4230-5753"
+  # Group members. Their papers are searched for and their names shown in colour
   orcids:
     - "0000-0002-1234-5678"
     - "0000-0001-8765-4321"
+  # Optional. A paper belongs to a section when the lead is one of the last two authors
+  sections:
+    - {name: "Glucagon", lead: "0000-0002-1234-5678"}
+  # Optional. DOIs of papers to leave out (e.g. a correction notice listed as an article)
+  exclude_papers: []
 ```
 
-Click **Commit changes**. The page rebuilds within a few minutes, and the
-"Latest publication" box and the chart switch from example to real data.
+Click **Commit changes**. The page rebuilds within a few minutes. The "Latest publication"
+box and the chart switch from example to real data, and an **All publications →** link
+appears, leading to the publications page.
 
-The group's papers are found in two places and merged: **OpenAlex**, which picks up new papers
-within days of publication, and **PubMed** (via Europe PMC), as a cross-check. Only journal
-articles and reviews are counted. A paper is only found if the member's ORCID is linked to it;
-if papers are missing, add a name search for PubMed as well, e.g.
+**The publications page** lists every paper since the PI's first last-author paper. You can
+search titles and abstracts, filter by year, journal, type, group member (and their author
+position: first, last or one of the last two) and section, sort the list, and download what
+you see as a spreadsheet (CSV) or for a reference manager (BibTeX). The list is also saved as
+`publications.json` next to the page.
+
+**Where the papers come from.** They are found in two places and merged: **OpenAlex**, which
+picks up new papers within days of publication, and **PubMed** (via Europe PMC), as a
+cross-check and the main source of abstracts. Journal articles and reviews are included, and
+JoVE papers are included with the label "Methods". Preprints, conference abstracts,
+editorials and letters are not. A paper is only found if a member's ORCID is linked to it; if
+papers are missing, add a name search for PubMed as well, e.g.
 `extra_query: 'AUTH:"Wewer Albrechtsen NJ"'`.
+
+**If a source is down.** When OpenAlex or PubMed fails, the build keeps the papers from the
+previously published list (read from `site_url`), so nothing disappears from the page for a day.
 
 ### Give the build an OpenAlex key (free, 5 minutes)
 
@@ -104,6 +129,7 @@ Everything is in `config.yml`:
 | How far back to look for papers | `window_days:` (overall, or per tab) |
 | News feeds | `news:` (any RSS or Atom feed) |
 | Quick links | `links:` |
+| Group members, sections and papers to leave out | `group:` |
 | Calendar ("Coming up"): sources, keywords, conferences, time windows | `events:` |
 | Turn off a daily box | `daily:` (remove the line or set it to `false`) |
 
@@ -116,7 +142,8 @@ Everything is in `config.yml`:
 - If a tab is empty, widen `window_days` or add synonyms.
 - The filter buttons (All · Preprints · Reviews · Key journals) work automatically for every tab.
 
-Design changes (colours, layout) go in `template/index.html`.
+Design changes (colours, layout) go in `template/index.html` (dashboard) and
+`template/publications.html` (publications page).
 
 ## 5. Check that it keeps working
 

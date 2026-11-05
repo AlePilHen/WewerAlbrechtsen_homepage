@@ -14,7 +14,8 @@ GitHub Actions runs `build.py`, which:
 1. reads `config.yml`,
 2. fetches fresh data from a set of public sources,
 3. puts all of it into one JSON object,
-4. pastes that JSON into `template/index.html` and saves the result as `site/index.html`.
+4. pastes that JSON into `template/index.html` and saves the result as `site/index.html`,
+5. does the same for the group's publications, giving `site/publications.html`.
 
 The page's own JavaScript then draws everything from that embedded data when someone opens it.
 
@@ -34,7 +35,7 @@ The page's own JavaScript then draws everything from that embedded data when som
 │                        Cluster, DDEA,     │
 │                        TeSS, conference   │
 │                        websites           │
-│ 6  Write the page                         │
+│ 6  Write the pages                        │
 └───────────────────────────────────────────┘            │
                                                          ▼
                                                    GitHub Pages
@@ -46,7 +47,8 @@ The page's own JavaScript then draws everything from that embedded data when som
 |---|---|
 | `config.yml` | Everything you are expected to change: searches, feeds, journals, links, ORCIDs |
 | `scripts/build.py` | The build script described here |
-| `template/index.html` | The page design (HTML, CSS and JavaScript). Contains the placeholder `/*__DATA__*/null` where the data goes |
+| `template/index.html` | The dashboard design (HTML, CSS and JavaScript). Contains the placeholder `/*__DATA__*/null` where the data goes |
+| `template/publications.html` | The publications page design. Contains the placeholder `/*__PUBS__*/null` |
 | `sample_data.json` | Saved example data, used with `--sample` to build the page without internet |
 | `.github/workflows/build.yml` | Tells GitHub when to run the build (daily, on every change, or by hand) and publishes `site/` |
 | `site/` | The output. Created by the build; not stored in the repository |
@@ -156,41 +158,72 @@ For each feed:
 
 ### Step 3: Group publications (`fetch_group_pubs`)
 
-Fills "Latest publication" and "Papers per year". It uses two sources and merges them,
+Fills "Latest publication" and "Papers per year" on the dashboard, and builds the separate
+**publications page** (`publications.html`). It uses two sources and merges them,
 because each catches papers the other misses:
 
 | | OpenAlex | PubMed (via Europe PMC) |
 |---|---|---|
 | Speed | New papers appear within days of the DOI being registered | New papers appear when PubMed has indexed them, which can take weeks |
 | Coverage | Also journals that PubMed doesn't index | Biomedicine only |
+| Abstracts | Usually, rebuilt from a word index (`openalex_abstract()`) | Usually, as written by the journal |
 | Searched by | ORCID | ORCID, plus the optional `extra_query` (e.g. a name search) |
+
+The ORCIDs searched are the ones in `group: orcids:` plus `pi_orcid`.
 
 What happens:
 
 1. **OpenAlex** (`openalex_api_key`, `openalex_group_works`, `from_openalex`). One search for
-   all ORCIDs in `config.yml`, limited to `type` article or review and to journals (so
-   preprints, conference abstracts, book chapters, editorials and letters are excluded).
-   The API key is added as the `api_key` parameter. Results come in pages of 200; the
-   script follows the pages until it has them all. If OpenAlex rejects the combined filter
-   (HTTP 400), it retries with the ORCID filter only and applies the type and journal rules
-   itself. If OpenAlex refuses the request (HTTP 401/402/403/409, usually a missing or wrong
-   key), the build says so and continues with PubMed only.
-2. **PubMed via Europe PMC.** One search for the same ORCIDs (`AUTHORID:"…"`), plus
-   `extra_query` if set, limited to PubMed records (`SRC:MED`). Editorials, comments,
-   letters, errata and similar are dropped using the PubMed publication type
-   (`EPMC_SKIP_TYPES`); reviews are kept.
+   all ORCIDs. Results come in pages of 200; the script follows the pages until it has
+   them all. Each work is then checked by `from_openalex()`, which keeps:
+   - journal articles and reviews (`OPENALEX_TYPES`), and
+   - anything from JoVE (Journal of Visualized Experiments, `JOVE_RX`), labelled **Methods**.
+
+   Preprints, conference abstracts, book chapters, datasets (e.g. figshare), editorials and
+   letters are left out. The API key is added as the `api_key` parameter. If OpenAlex refuses
+   the request (HTTP 401/402/403/409, usually a missing or wrong key), the build says so and
+   continues with PubMed only.
+2. **PubMed via Europe PMC** (`epmc_full_records`, `from_epmc`). One search for the same
+   ORCIDs (`AUTHORID:"…"`), plus `extra_query` if set, limited to PubMed records (`SRC:MED`).
+   It asks for full records (`resultType=core`), which include the abstract and each
+   author's ORCID where known, and pages through all results with `cursorMark`.
+   Editorials, comments, letters, errata and similar are dropped using the PubMed
+   publication type (`EPMC_SKIP_TYPES`); reviews are kept.
 3. **Merge.** Papers are matched by DOI (**`norm_doi()`** removes `https://doi.org/` and
    lower-cases it), or by title if there is no DOI (**`paper_key()`**). For papers found in
-   both, the earliest date is kept and both sources are recorded. OpenAlex's version is
-   preferred for the display text because it has full journal names.
-4. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
-   only in PubMed, and lists recent papers that are "not yet in PubMed".
-5. **Latest publication** is the paper with the newest date that is not in the future
-   (journals sometimes date a print issue ahead). The page shows which sources found it.
-6. **Papers per year** counts the merged papers by year, for the last eight years.
+   both sources:
+   - the earliest date is kept and both sources are recorded,
+   - the longer abstract is kept,
+   - the type is Methods if either source says JoVE, otherwise Review if either says review,
+   - author ORCIDs that only PubMed has are copied over (when the author lists match).
+4. **If a source failed today** (`previous_publications`), the script downloads yesterday's
+   `publications.json` from `site_url` and keeps any paper from it that is missing today.
+   That way a temporary OpenAlex or PubMed problem doesn't make papers disappear from the
+   publications page.
+5. **Exclusions.** Any DOI listed in `exclude_papers` is removed.
+6. **Group members** (`mark_members`). An author is a group member when their ORCID is in
+   `config.yml`. Some papers have no ORCIDs for their authors; there, an author is matched by
+   surname and first initial, using the spellings the member has on their other papers
+   (`_name_keys`, which also treats the different kinds of hyphen as the same). A name pair
+   shared by two members is never used. Each member is shown with the spelling of their name
+   they use most often.
+7. **Start date.** The earliest paper with the PI (`pi_orcid`) as **last** author sets the
+   start date. Earlier papers (e.g. from the PI's own PhD) are left out.
+8. **Sections.** Each section in `config.yml` has one lead (an ORCID). A paper belongs to a
+   section when the lead is one of the **last two** authors. A paper can belong to several
+   sections, or none.
+9. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
+   only in PubMed, how many have abstracts, and lists recent papers that are "not yet in PubMed".
+10. **Latest publication** is the paper with the newest date that is not in the future
+    (journals sometimes date a print issue ahead). The page shows which sources found it.
+11. **Papers per year** counts the papers by year, for the last eight years.
 
-If there are no ORCIDs in `config.yml`, or both sources fail, **`example_group_pubs()`**
-returns a clearly marked example instead.
+The full list goes to `site/publications.json` and is embedded in `site/publications.html`
+(see step 6).
+
+If there are no ORCIDs in `config.yml`, or both sources fail and there is no previous list,
+**`example_group_pubs()`** returns a clearly marked example instead, and no publications page
+is made.
 
 ### Step 4: Right column
 
@@ -302,7 +335,7 @@ The page works out the registration label itself ("Apply by 15 Nov", "Deadline i
 "Deadline passed 2 days ago"), using the viewer's date. That way the label is correct over a
 weekend, when the page isn't rebuilt.
 
-### Step 6: Writing the page (`render`)
+### Step 6: Writing the pages (`render`, `fill_template`)
 
 1. Reads `template/index.html`.
 2. Converts all data to JSON and replaces the placeholder `/*__DATA__*/null` with it.
@@ -310,6 +343,25 @@ weekend, when the page isn't rebuilt.
 3. Wraps it in a minimal HTML document and writes `site/index.html`.
 4. Also writes `site/data.json`, the same data in readable form, which is handy for
    checking what the build fetched.
+5. If step 3 found real publications, does the same for `template/publications.html`
+   (placeholder `/*__PUBS__*/null`) and writes `site/publications.html` and
+   `site/publications.json`. The dashboard then shows an "All publications →" link under
+   "Latest publication".
+6. Writes `site/events_report.txt` (see step 5).
+
+#### The publications page
+
+All filtering happens in the viewer's browser, so it is instant and needs no server.
+The main JavaScript functions in `template/publications.html`:
+
+| Function | What it does |
+|---|---|
+| `setup()` | Fills the drop-down lists (years, journals, types, members, sections) from the data and connects them so the list updates as soon as a filter changes |
+| `current()` | Applies all filters and the sort order, and returns the matching papers. The search box splits the text into words; every word must appear somewhere in the title, abstract, authors or journal. The author position applies to the chosen member, or to any group member if none is chosen |
+| `draw()` | Shows the matching papers, grouped by year when sorted by date, 60 at a time with a "Show more" button |
+| `paperHtml()`, `authorHtml()` | One paper: title, authors (members in colour, lists over 12 authors shortened), journal, date, type and section labels, PMID/DOI links and the abstract, which opens by itself when the search matched it |
+| `highlight()` | Marks the search words in yellow |
+| `toCSV()`, `toBibTeX()` | Download the papers currently shown, as a spreadsheet (CSV) or for a reference manager (BibTeX) |
 
 Finally `main()` prints the summary: build time, and every source that had a problem.
 
@@ -353,7 +405,7 @@ Finally `main()` prints the summary: build time, and every source that had a pro
                                                 "preprint", "review", "tier", "url" } ] } ] } ],
   "news":          [ { "label": "Nature", "logo": "...",
                        "items": [ { "title", "url", "source", "date", "image", "type" } ] } ],
-  "group_pubs":    { "example": false,
+  "group_pubs":    { "example": false, "has_publications": true,
                      "latest": { "title", "authors", "journal", "date", "url", "sources" },
                      "per_year": [ { "year": 2026, "n": 21 } ] },
   "events":        { "items": [ { "title", "url", "start", "end", "time", "where", "online", "source",
@@ -362,6 +414,20 @@ Finally `main()` prints the summary: build time, and every source that had a pro
   "daily":         { "spotlight": {...}, "target": {...}, "owid": {...}, "motm": {...},
                      "spotlight_enabled": true, "target_enabled": false },
   "status":        [ { "name": "News · Nature", "ok": true, "count": 15 } ]
+}
+```
+
+`site/publications.json` (the publications page) looks like this:
+
+```json
+{
+  "generated": "2026-11-05T04:17+00:00",
+  "pi":        { "orcid": "0000-0003-4230-5753", "name": "Nicolai J. Wewer Albrechtsen", "since": "2016-05-10" },
+  "members":   [ { "orcid": "...", "name": "..." } ],
+  "sections":  [ "Glucagon" ],
+  "papers":    [ { "title", "journal", "date", "type", "doi", "pmid", "url", "abstract",
+                   "sections": [...], "sources": [...],
+                   "authors": [ { "n": "name", "o": "ORCID or empty", "m": "member ORCID or empty" } ] } ]
 }
 ```
 
@@ -394,6 +460,15 @@ Europe PMC's search syntax is documented at <https://europepmc.org/searchsyntax>
    function that fills it from `DASH.daily.something` (copy `motm()`), and call it at the
    bottom of the script.
 
+**Add a group member.** Add their ORCID under `group: orcids:` in `config.yml`. From the next
+build their name is shown in colour on the publications page, they appear in the "Group member"
+filter, and their papers are searched for.
+
+**Add a section.** Add `- {name: "Section name", lead: "ORCID"}` under `group: sections:`.
+The lead does not have to be in `orcids:`, but usually is.
+
+**Remove a paper from the list.** Add its DOI under `group: exclude_papers:`.
+
 **Change the design.** Everything visual is in `template/index.html`. Colours are defined
 once, at the top of the `<style>` block, for light and dark mode. To try changes quickly, use
 `python scripts/build.py --sample sample_data.json` and refresh `site/index.html` in the
@@ -415,6 +490,10 @@ browser.
 | An irrelevant course in Coming up | A broad DDSA tag or TeSS keyword | Check `events_report.txt`, then remove the tag or keyword, add an `exclude_words` entry, or add it to `hide` in `config.yml` |
 | A passed deadline is still shown | The deadline wasn't recognised | Look the event up in `events_report.txt` ("no deadline found") and check how its page writes the deadline |
 | A recent group paper is missing | Not in OpenAlex or PubMed yet, or the member's ORCID isn't linked to it | Check the paper's page in OpenAlex; ask the member to link the paper in their ORCID record |
+| A group member's name isn't in colour on some papers | The paper has no ORCIDs and the member's name is spelled differently there, or two members share surname and first initial | Ask the member to link the paper in their ORCID record |
+| A paper is in the wrong section, or in none | The section lead isn't among the last two authors, or their ORCID is missing on that paper | Check the author list on the publications page. Sections are decided by author position only |
+| A non-research item appears (e.g. a correction notice) | The source labels it as an article | Add its DOI to `exclude_papers` |
+| `a source failed: kept N papers from the previously published list` | OpenAlex or PubMed failed today | Nothing to do if it's a one-off; check the `!!` line for the reason |
 | News images missing | The publisher blocks automated page requests, or changed its pages | The page falls back to the logo or name tile; nothing to fix unless it's permanent |
 | `could not read the article type` | Nature changed where pages state the article type | The filter then keeps all items; update `TYPE_PATTERNS` in `build.py` |
 | The whole page didn't update | The GitHub Action didn't run | Check the Actions tab. GitHub pauses daily runs after 60 days without changes to the repository; any edit restarts them |

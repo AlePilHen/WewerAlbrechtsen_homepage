@@ -256,15 +256,21 @@ def fetch_papers(cfg: dict) -> list[dict]:
 # ---------- Group publications (OpenAlex + PubMed, merged) ----------
 
 OPENALEX = "https://api.openalex.org/works"
-# Publication types that count as group papers
-OPENALEX_TYPES = ["article", "review"]
+# Publication types that count as group papers (OpenAlex type -> label on the page)
+OPENALEX_TYPES = {"article": "Article", "review": "Review"}
 EPMC_SKIP_TYPES = ("editorial", "comment", "letter", "erratum", "correction", "news", "retraction",
                    "expression of concern", "preprint", "published erratum")
+# JoVE (Journal of Visualized Experiments) papers are always included, labelled "Methods"
+JOVE_RX = re.compile(r"visuali[sz]ed experiments|\bj vis exp\b|\bjove\b|jove\.com", re.I)
 
 
 def norm_doi(doi: str | None) -> str:
     d = (doi or "").strip().lower()
     return re.sub(r"^(https?://)?(dx\.)?doi\.org/", "", d)
+
+
+def norm_orcid(orcid: str | None) -> str:
+    return re.sub(r"^https?://orcid\.org/", "", (orcid or "").strip()).upper()
 
 
 def paper_key(doi: str | None, title: str) -> str:
@@ -286,130 +292,294 @@ class OpenAlexKeyError(RuntimeError):
 
 
 def openalex_group_works(orcids: list[str], api_key: str = "") -> list[dict]:
-    """All journal articles and reviews by these ORCIDs in OpenAlex (follows the result pages).
-
-    Asks OpenAlex to filter by type and journal. If OpenAlex rejects that filter,
-    it retries with the ORCID filter only and applies the same rules here instead.
-    """
-    ids = "|".join(f"https://orcid.org/{o.strip()}" for o in orcids)
-    full = f"authorships.author.orcid:{ids},type:{'|'.join(OPENALEX_TYPES)},primary_location.source.type:journal"
-    simple = f"authorships.author.orcid:{ids}"
-    for flt in (full, simple):
-        params = {"filter": flt, "select": "id,doi,title,publication_date,type,primary_location,authorships,ids",
-                  "per_page": 200, "cursor": "*"}
-        if api_key:
-            params["api_key"] = api_key  # free key from openalex.org/settings/api
-        works = []
-        try:
-            for _ in range(25):  # at most 5,000 papers
-                d = get(OPENALEX, params=params).json()
-                works += d.get("results", [])
-                progress(f"        OpenAlex: {len(works)} / {d.get('meta', {}).get('count', '?')} papers")
-                params["cursor"] = d.get("meta", {}).get("next_cursor")
-                if not params["cursor"] or not d.get("results"):
-                    break
-        except requests.HTTPError as e:
-            code = e.response.status_code if e.response is not None else None
-            if code in (401, 402, 403, 409):
-                raise OpenAlexKeyError(
-                    f"HTTP {code}: OpenAlex refused the request. "
-                    + ("Check that the API key is correct." if api_key else
-                       "It needs a free API key (OPENALEX_API_KEY); see the README."))
-            if flt is full and code == 400:
-                log(f"        OpenAlex did not accept the full filter (HTTP {e.response.status_code}), retrying a simpler search")
-                continue
-            raise
-        if flt is simple:  # apply the type/journal rules here
-            works = [w for w in works if w.get("type") in OPENALEX_TYPES
-                     and ((w.get("primary_location") or {}).get("source") or {}).get("type", "journal") == "journal"]
-        progress_done(f"        OpenAlex: {plural(len(works), 'paper')}")
-        return works
-    return []
+    """Every work in OpenAlex with one of these ORCIDs among its authors (follows the result pages).
+    Which works count as papers is decided afterwards, in from_openalex()."""
+    ids = "|".join(f"https://orcid.org/{o}" for o in orcids)
+    params = {"filter": f"authorships.author.orcid:{ids}",
+              "select": "id,doi,title,publication_date,type,primary_location,authorships,ids,abstract_inverted_index",
+              "per_page": 200, "cursor": "*"}
+    if api_key:
+        params["api_key"] = api_key  # free key from openalex.org/settings/api
+    works = []
+    try:
+        for _ in range(25):  # at most 5,000 works
+            d = get(OPENALEX, params=params).json()
+            works += d.get("results", [])
+            progress(f"        OpenAlex: {len(works)} / {d.get('meta', {}).get('count', '?')} works")
+            params["cursor"] = d.get("meta", {}).get("next_cursor")
+            if not params["cursor"] or not d.get("results"):
+                break
+    except requests.HTTPError as e:
+        code = e.response.status_code if e.response is not None else None
+        if code in (401, 402, 403, 409):
+            raise OpenAlexKeyError(
+                f"HTTP {code}: OpenAlex refused the request. "
+                + ("Check that the API key is correct." if api_key else
+                   "It needs a free API key (OPENALEX_API_KEY); see the README."))
+        raise
+    progress_done(f"        OpenAlex: {plural(len(works), 'work')} found")
+    return works
 
 
-def from_openalex(w: dict) -> dict:
+def openalex_abstract(inverted: dict | None) -> str:
+    """OpenAlex stores abstracts as {word: [positions]}; put the words back in order."""
+    if not inverted:
+        return ""
+    words = sorted((pos, word) for word, positions in inverted.items() for pos in positions)
+    text = html.unescape(re.sub(r"<[^>]+>", "", " ".join(word for _, word in words)))
+    return " ".join(text.split())
+
+
+def paper_type(journal: str, kind: str, url: str = "") -> str:
+    if JOVE_RX.search(journal or "") or "jove.com" in (url or ""):
+        return "Methods"
+    return "Review" if "review" in (kind or "").lower() else "Article"
+
+
+def from_openalex(w: dict) -> dict | None:
+    """One OpenAlex work -> one paper, or None if it isn't a journal article, review or JoVE paper."""
     loc = w.get("primary_location") or {}
-    names = [a.get("author", {}).get("display_name", "") for a in w.get("authorships") or []]
-    title = clean_title(w.get("title")).rstrip(".")
+    source = loc.get("source") or {}
+    journal = source.get("display_name", "")
+    kind = paper_type(journal, w.get("type", ""), loc.get("landing_page_url", ""))
+    if kind != "Methods" and (w.get("type") not in OPENALEX_TYPES or source.get("type", "journal") != "journal"):
+        return None
     doi = norm_doi(w.get("doi"))
-    return {"title": title, "authors": short_authors(", ".join(n for n in names if n), 3),
-            "journal": (loc.get("source") or {}).get("display_name", ""),
-            "date": w.get("publication_date") or "", "doi": doi,
+    pmid = str((w.get("ids") or {}).get("pmid") or "").rstrip("/").split("/")[-1]
+    authors = []
+    for a in w.get("authorships") or []:
+        name = (a.get("author") or {}).get("display_name") or a.get("raw_author_name") or ""
+        authors.append({"name": name, "orcid": norm_orcid((a.get("author") or {}).get("orcid")), "last": "", "first": ""})
+    return {"title": clean_title(w.get("title")).rstrip("."), "authors": authors, "journal": journal,
+            "date": w.get("publication_date") or "", "doi": doi, "pmid": pmid, "type": kind,
             "url": f"https://doi.org/{doi}" if doi else (loc.get("landing_page_url") or w.get("id", "")),
-            "pmid": (w.get("ids") or {}).get("pmid", "")}
+            "abstract": openalex_abstract(w.get("abstract_inverted_index"))}
+
+
+def epmc_full_records(query: str) -> list[dict]:
+    """Europe PMC search with full records ("core": includes abstracts and authors' ORCIDs)."""
+    params = {"query": query, "format": "json", "resultType": "core", "pageSize": 1000, "cursorMark": "*"}
+    out = []
+    for _ in range(10):
+        d = get(EPMC, params=params).json()
+        out += d.get("resultList", {}).get("result", [])
+        nxt = d.get("nextCursorMark")
+        if not nxt or nxt == params["cursorMark"] or not d.get("resultList", {}).get("result"):
+            break
+        params["cursorMark"] = nxt
+    return out
+
+
+def from_epmc(r: dict) -> dict | None:
+    """One Europe PMC (PubMed) record -> one paper, or None for editorials, letters etc."""
+    pubtypes = (r.get("pubTypeList") or {}).get("pubType") or [r.get("pubType") or ""]
+    ptype = " ".join(pubtypes if isinstance(pubtypes, list) else [pubtypes]).lower()
+    jinfo = (r.get("journalInfo") or {}).get("journal") or {}
+    journal = jinfo.get("title") or r.get("journalTitle") or jinfo.get("medlineAbbreviation") or ""
+    kind = paper_type(f"{journal} {jinfo.get('medlineAbbreviation', '')}", ptype)
+    if kind == "Article" and any(t in ptype for t in EPMC_SKIP_TYPES):
+        return None
+    authors = []
+    for a in (r.get("authorList") or {}).get("author") or []:
+        aid = a.get("authorId") or {}
+        orcid = norm_orcid(aid.get("value")) if str(aid.get("type", "")).upper() == "ORCID" else ""
+        first, last = a.get("firstName") or "", a.get("lastName") or ""
+        name = f"{first} {last}".strip() or a.get("fullName") or a.get("collectiveName") or ""
+        authors.append({"name": name, "orcid": orcid, "last": last, "first": first or a.get("initials", "")})
+    doi = norm_doi(r.get("doi"))
+    abstract = html.unescape(re.sub(r"<[^>]+>", " ", r.get("abstractText") or ""))
+    return {"title": clean_title(r.get("title")).rstrip("."), "authors": authors, "journal": journal,
+            "date": r.get("firstPublicationDate") or "", "doi": doi, "pmid": str(r.get("pmid") or ""),
+            "type": kind, "url": f"https://doi.org/{doi}" if doi else f"https://europepmc.org/article/MED/{r.get('pmid', '')}",
+            "abstract": " ".join(abstract.split())}
+
+
+def _name_keys(author: dict) -> set[tuple[str, str]]:
+    """(surname, first initial) pairs an author name could correspond to, for matching names
+    on papers that have no ORCID. Two-word surnames (e.g. 'Wewer Albrechtsen') are covered."""
+    def norm(x: str) -> str:  # one kind of hyphen, lower case
+        return re.sub(r"[\u2010-\u2015\u2212]", "-", x).lower()
+    keys = set()
+    if author.get("last"):
+        keys.add((norm(author["last"]), norm((author.get("first") or " ")[0])))
+    words = norm(re.sub(r"[.,]", " ", author.get("name", ""))).split()
+    if len(words) >= 2:
+        initial = words[0][0].lower()
+        keys.add((words[-1].lower(), initial))
+        keys.add((" ".join(words[-2:]).lower(), initial))
+    return keys
+
+
+def mark_members(papers: list[dict], member_orcids: list[str]) -> dict[str, str]:
+    """Mark which authors are group members (by ORCID, or by name where a paper has no ORCIDs).
+    Returns {orcid: the name most often used for that person}."""
+    seen_names: dict[str, Counter] = {o: Counter() for o in member_orcids}
+    member_keys: dict[str, set] = {o: set() for o in member_orcids}
+    for p in papers:
+        for a in p["authors"]:
+            if a["orcid"] in seen_names:
+                seen_names[a["orcid"]][a["name"]] += 1
+                member_keys[a["orcid"]] |= _name_keys(a)
+    # Only distinctive keys: a (surname, initial) pair shared by two members is not used
+    owner: dict[tuple, str] = {}
+    for o, keys in member_keys.items():
+        for k in keys:
+            owner[k] = "" if k in owner and owner[k] != o else o
+    for p in papers:
+        for a in p["authors"]:
+            if a["orcid"] in seen_names:
+                a["member"] = a["orcid"]
+            elif not a["orcid"]:
+                hits = {owner[k] for k in _name_keys(a) if owner.get(k)}
+                a["member"] = hits.pop() if len(hits) == 1 else ""
+            else:
+                a["member"] = ""
+    return {o: (c.most_common(1)[0][0] if c else o) for o, c in seen_names.items()}
+
+
+def previous_publications(cfg: dict) -> list[dict]:
+    """The list published by the last successful build (used if a source fails today)."""
+    site = str(cfg.get("site_url") or "").strip()
+    if not site:
+        return []
+    try:
+        d = get(site.rstrip("/") + "/publications.json").json()
+        return [{**p, "authors": [{"name": a.get("n", ""), "orcid": a.get("o", ""), "last": "", "first": ""}
+                                  for a in p.get("authors", [])]} for p in d.get("papers", [])]
+    except Exception:
+        return []
 
 
 def fetch_group_pubs(cfg: dict) -> dict:
     g = cfg.get("group", {})
-    orcids = [str(o).strip() for o in g.get("orcids") or [] if str(o).strip()]
+    orcids = [norm_orcid(o) for o in g.get("orcids") or [] if str(o).strip()]
+    pi = norm_orcid(g.get("pi_orcid"))
+    if pi and pi not in orcids:
+        orcids.append(pi)
     if not orcids and not g.get("extra_query"):
         fail("Group publications", "no ORCIDs in config.yml, showing example")
         return example_group_pubs()
 
     # 1) OpenAlex: fast, picks up papers within days of publication
-    oa = []
+    oa, failed = [], False
     if orcids:
         key = openalex_api_key()
-        log(f"    ..  searching OpenAlex for {plural(len(orcids), 'ORCID')} (journal articles and reviews)"
+        log(f"    ..  searching OpenAlex for {plural(len(orcids), 'ORCID')}"
             + ("" if key else " - no API key found, this will probably fail"))
         try:
-            oa = [from_openalex(w) for w in openalex_group_works(orcids, key)]
-            ok("Group publications · OpenAlex", len(oa), "OpenAlex", f"{plural(len(oa), 'paper')}")
+            works = openalex_group_works(orcids, key)
+            oa = [p for p in (from_openalex(w) for w in works) if p]
+            ok("Group publications · OpenAlex", len(oa), "OpenAlex",
+               f"{plural(len(oa), 'paper')} (articles, reviews, JoVE; {len(works) - len(oa)} other works left out)")
         except Exception as e:
+            failed = True
             fail("Group publications · OpenAlex", e, "OpenAlex")
 
-    # 2) PubMed (via Europe PMC): the cross-check, plus the optional name search
+    # 2) PubMed (via Europe PMC), full records with abstracts: the cross-check
     pm = []
     parts = [f'AUTHORID:"{o}"' for o in orcids] + ([f"({g['extra_query']})"] if g.get("extra_query") else [])
-    log(f"    ..  cross-checking in PubMed (via Europe PMC)" + (" incl. extra query" if g.get("extra_query") else ""))
+    log("    ..  cross-checking in PubMed (via Europe PMC, with abstracts)")
     try:
-        recs = epmc_search("(" + " OR ".join(parts) + ") AND SRC:MED", 1000)
-        for r in recs:
-            ptype = (r.get("pubType") or "").lower()
-            if any(t in ptype for t in EPMC_SKIP_TYPES) and "review" not in ptype:
-                continue
-            p = to_paper(r, {})
-            pm.append({**p, "authors": short_authors(r.get("authorString"), 3), "doi": norm_doi(r.get("doi")),
-                       "pmid": r.get("pmid", "")})
+        pm = [p for p in (from_epmc(r) for r in epmc_full_records("(" + " OR ".join(parts) + ") AND SRC:MED")) if p]
         ok("Group publications · PubMed", len(pm), "PubMed (Europe PMC)", f"{plural(len(pm), 'paper')}")
     except Exception as e:
+        failed = True
         fail("Group publications · PubMed", e, "PubMed (Europe PMC)")
 
-    if not oa and not pm:
-        return example_group_pubs()
-
-    # 3) Merge by DOI (or title); keep the earliest date and remember where each paper was found
+    # 3) Merge by DOI (or title); fill gaps from either source
     merged: dict[str, dict] = {}
     for src, papers in (("OpenAlex", oa), ("PubMed", pm)):
         for p in papers:
             if not p["title"] or not p["date"]:
                 continue
             k = paper_key(p["doi"], p["title"])
-            if k in merged:
-                m = merged[k]
-                m["sources"].append(src)
-                m["date"] = min(m["date"], p["date"])
-                m["pmid"] = m.get("pmid") or p.get("pmid", "")
-            else:
+            if k not in merged:
                 merged[k] = {**p, "sources": [src]}
-    papers = sorted(merged.values(), key=lambda p: p["date"])
+                continue
+            m = merged[k]
+            m["sources"].append(src)
+            m["date"] = min(m["date"], p["date"])
+            m["pmid"] = m["pmid"] or p["pmid"]
+            m["journal"] = m["journal"] or p["journal"]
+            if len(p["abstract"]) > len(m["abstract"]):
+                m["abstract"] = p["abstract"]
+            if "Methods" in (m["type"], p["type"]):
+                m["type"] = "Methods"
+            elif "Review" in (m["type"], p["type"]):
+                m["type"] = "Review"
+            # Same author list in both: copy ORCIDs and name parts that only PubMed has
+            if len(m["authors"]) == len(p["authors"]):
+                for a, b in zip(m["authors"], p["authors"]):
+                    a["orcid"] = a["orcid"] or b["orcid"]
+                    a["last"], a["first"] = a["last"] or b["last"], a["first"] or b["first"]
+
+    # If a source failed today, keep the papers from the last published list as well
+    if failed:
+        prev = previous_publications(cfg)
+        added = 0
+        for p in prev:
+            k = paper_key(p.get("doi"), p.get("title", ""))
+            if k not in merged and p.get("title") and p.get("date"):
+                merged[k] = {**p, "sources": p.get("sources", ["previous build"])}
+                added += 1
+        if prev:
+            log(f"        a source failed: kept {plural(added, 'paper')} from the previously published list")
+    if not merged:
+        return example_group_pubs()
+
+    # 4) Exclusions, group members, the PI's start date and sections
+    excluded = {norm_doi(d) for d in g.get("exclude_papers") or []}
+    papers = sorted((p for p in merged.values() if not (p["doi"] and p["doi"] in excluded)), key=lambda p: p["date"])
+    names = mark_members(papers, orcids)
+    since = ""
+    if pi:
+        firsts = [p["date"] for p in papers if p["authors"] and p["authors"][-1].get("member") == pi]
+        if firsts:
+            since = min(firsts)
+            before = len(papers)
+            papers = [p for p in papers if p["date"] >= since]
+            log(f"        from {since} ({names.get(pi, pi)}'s first last-author paper): "
+                f"{plural(len(papers), 'paper')}, {before - len(papers)} earlier left out")
+        else:
+            log("        no paper with the PI as last author found, so no start date applied")
+    sections = [{"name": str(s.get("name", "")).strip(), "lead": norm_orcid(s.get("lead"))}
+                for s in g.get("sections") or [] if s.get("name") and s.get("lead")]
+    for p in papers:
+        senior = {a.get("member") for a in p["authors"][-2:] if a.get("member")}
+        p["sections"] = [s["name"] for s in sections if s["lead"] in senior]
+
     both = sum(len(p["sources"]) == 2 for p in papers)
     only_oa = [p for p in papers if p["sources"] == ["OpenAlex"]]
-    only_pm = [p for p in papers if p["sources"] == ["PubMed"]]
-    log(f"        merged: {plural(len(papers), 'paper')} ({both} in both, {len(only_oa)} only in OpenAlex, "
-        f"{len(only_pm)} only in PubMed)")
-    recent_new = [p for p in only_oa if p["date"] >= (TODAY - dt.timedelta(days=60)).isoformat()]
-    for p in recent_new[-5:]:
+    log(f"        merged: {plural(len(papers), 'paper')} ({both} in both sources, {len(only_oa)} only in OpenAlex, "
+        f"{sum(p['sources'] == ['PubMed'] for p in papers)} only in PubMed)")
+    for p in [p for p in only_oa if p["date"] >= (TODAY - dt.timedelta(days=60)).isoformat()][-5:]:
         log(f"        not yet in PubMed: {short(p['title'], 60)} ({p['date']})")
 
-    # The latest paper: newest date that isn't in the future (print issues are sometimes dated ahead)
+    # 5) What the dashboard and the publications page need
     past = [p for p in papers if p["date"][:10] <= TODAY.isoformat()] or papers
-    latest = dict(past[-1]) if past else None
-    if latest:
+    latest = None
+    if past:
+        lp = past[-1]
+        latest = {"title": lp["title"], "journal": lp["journal"], "date": lp["date"], "url": lp["url"],
+                  "authors": short_authors(", ".join(a["name"] for a in lp["authors"]), 3), "sources": lp["sources"]}
         log(f"        latest: {short(latest['title'], 70)} ({latest['journal']}, {latest['date']})")
     years = Counter(int(p["date"][:4]) for p in papers)
-    ok("Group publications", len(papers), "Group publications (merged)", f"{plural(len(papers), 'paper')}")
-    return {"example": False, "latest": latest,
+    publications = {
+        "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="minutes"),
+        "pi": {"orcid": pi, "name": names.get(pi, ""), "since": since},
+        "members": sorted(({"orcid": o, "name": n} for o, n in names.items()), key=lambda m: m["name"].split()[-1:]),
+        "sections": [s["name"] for s in sections],
+        "papers": [{"title": p["title"], "journal": p["journal"], "date": p["date"], "type": p["type"],
+                    "doi": p["doi"], "pmid": p["pmid"], "url": p["url"], "abstract": p["abstract"],
+                    "sections": p["sections"], "sources": p["sources"],
+                    # group members are shown with the same spelling of their name everywhere
+                    "authors": [{"n": names.get(a.get("member", ""), a["name"]), "o": a["orcid"], "m": a.get("member", "")}
+                                for a in p["authors"]]}
+                   for p in reversed(papers)],
+    }
+    ok("Group publications", len(papers), "Group publications (merged)",
+       f"{plural(len(papers), 'paper')}, {sum(bool(p['abstract']) for p in papers)} with abstracts")
+    return {"example": False, "latest": latest, "has_publications": True, "_publications": publications,
             "per_year": [{"year": y, "n": years.get(y, 0)} for y in range(TODAY.year - 7, TODAY.year + 1)]}
 
 
@@ -1648,18 +1818,35 @@ def write_event_report(path: pathlib.Path) -> None:
 # Render
 # ====================================================================
 
-def render(data: dict, out_dir: pathlib.Path, fragment: pathlib.Path | None) -> None:
-    tpl = (ROOT / "template" / "index.html").read_text(encoding="utf-8")
-    blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
-    body = tpl.replace("/*__DATA__*/null", blob)
-    page = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+def fill_template(name: str, placeholder: str, data: dict) -> str:
+    """Put the data into a template. "</" is escaped so it can't close the <script> tag early."""
+    tpl = (ROOT / "template" / name).read_text(encoding="utf-8")
+    return tpl.replace(placeholder, json.dumps(data, ensure_ascii=False).replace("</", "<\\/"))
+
+
+def as_page(body: str) -> str:
+    return ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
             '</head>\n<body>\n' + body + "\n</body>\n</html>\n")
+
+
+def render(data: dict, out_dir: pathlib.Path, fragment: pathlib.Path | None,
+           publications: dict | None = None) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "index.html").write_text(page, encoding="utf-8")
+    body = fill_template("index.html", "/*__DATA__*/null", data)
+    (out_dir / "index.html").write_text(as_page(body), encoding="utf-8")
     (out_dir / "data.json").write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
     if fragment:
         fragment.write_text(body, encoding="utf-8")
+    # The publications page: the data is put into the page itself (so it also works when the
+    # file is opened from disk) and saved as publications.json for downloading / reuse
+    if publications:
+        pub_data = {**publications, "group": data["group"]}
+        pub_body = fill_template("publications.html", "/*__PUBS__*/null", pub_data)
+        (out_dir / "publications.html").write_text(as_page(pub_body), encoding="utf-8")
+        (out_dir / "publications.json").write_text(json.dumps(publications, ensure_ascii=False, indent=1), encoding="utf-8")
+        if fragment:
+            fragment.with_name(fragment.stem + "-publications.html").write_text(pub_body, encoding="utf-8")
 
 
 def rel(p: pathlib.Path) -> str:
@@ -1696,6 +1883,7 @@ def main() -> int:
         n = 2
         step(1, n, "Example data")
         data = {**base, **json.loads(args.sample.read_text(encoding="utf-8")), "sample": True}
+        publications = data.pop("publications", None)
         log(f"    ok  read {rel(args.sample)} (nothing is fetched from the internet)")
     else:
         n = 6
@@ -1705,6 +1893,7 @@ def main() -> int:
         news = fetch_news(cfg)
         step(3, n, "Group publications (OpenAlex + PubMed)")
         group = fetch_group_pubs(cfg)
+        publications = group.pop("_publications", None)
         step(4, n, "Daily boxes")
         dcfg = cfg.get("daily", {})
         target_on = bool(dcfg.get("target_of_the_day", True))
@@ -1724,8 +1913,11 @@ def main() -> int:
                 "events": events, "status": STATUS}
 
     step(n, n, "Writing the page")
-    render(data, args.out, args.fragment)
+    render(data, args.out, args.fragment, publications)
     log(f"    ok  {rel(args.out / 'index.html')}")
+    if publications:
+        log(f"    ok  {rel(args.out / 'publications.html')} and publications.json "
+            f"({plural(len(publications['papers']), 'paper')})")
     if EVENT_REPORT:
         write_event_report(args.out / "events_report.txt")
         log(f"    ok  {rel(args.out / 'events_report.txt')} (what the calendar showed and left out, and why)")

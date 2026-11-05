@@ -2,6 +2,8 @@
 # Dashboard configuration. Edit this file; the page rebuilds daily.
 # ------------------------------------------------------------------
 
+site_url: https://alepilhen.github.io/WewerAlbrechtsen_homepage/
+
 group:
   name: Wewer Albrechtsen Group
   subtitle: Clinical Biochemistry · Bispebjerg Hospital
@@ -16,12 +18,24 @@ group:
     - "0009-0006-2200-8099"  # Jesper
     - "0009-0005-4575-2593"  # Alexander
 
+  # The group leader. The publications page starts at this person's first
+  # paper as last author.
+  pi_orcid: "0000-0003-4230-5753"     # Nicolai J. Wewer Albrechtsen
+  # Sections, each with one lead (by ORCID). A paper belongs to a section when
+  # the lead is one of its last two authors.
+  sections: [
+    {name: "Preclinical section", lead: "0000-0003-2144-1385"},
+    {name: "Clinical section",    lead: "0000-0003-4000-5669"},
+    {name: "Proteomics section",  lead: "0009-0005-2855-208X"}
+  ]
+  # Papers wrongly attributed to the group (by DOI), left out everywhere:
+  exclude_papers: []
+    # - 10.1000/example-doi
   # Optional extra search for members without an ORCID (Europe PMC syntax), e.g.
   # extra_query: 'AUTH:"Wewer Albrechtsen NJ"'
   # This only searches PubMed (via Europe PMC); OpenAlex is searched by ORCID only.
   extra_query: ""
-  # OpenAlex needs a free API key. Do NOT put it in this file (it is public):
-  # store it as the GitHub secret OPENALEX_API_KEY (see the README).
+
 
 # ------------------------------------------------------------------
 # Journal lists. Names must match the NLM abbreviation that

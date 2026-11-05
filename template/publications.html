@@ -1,0 +1,320 @@
+<title>Group Publications</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column — header, filter panel, result bar, list of papers grouped by year.
+   Same colours and fonts as the dashboard; teal marks the group (members, the PI). */
+:root {
+  --bg: #eceff3; --surface: #ffffff; --surface-2: #f4f6f9; --fg: #1a2330; --muted: #5c6a7b; --line: #dbe1e8;
+  --blue: #2c5aa8; --blue-soft: #e3ebf8; --teal: #1d6b67; --teal-soft: #dcefec; --ochre: #94650f; --ochre-soft: #f5ebd6;
+  --mark: #fde9a8;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151b; --surface: #191f28; --surface-2: #202733; --fg: #e2e7ee; --muted: #8f9cad; --line: #29313d;
+    --blue: #86a9e8; --blue-soft: #233149; --teal: #5bbfb5; --teal-soft: #173230; --ochre: #e2b45c; --ochre-soft: #2f2715;
+    --mark: #5b4a12; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b; --surface: #191f28; --surface-2: #202733; --fg: #e2e7ee; --muted: #8f9cad; --line: #29313d;
+  --blue: #86a9e8; --blue-soft: #233149; --teal: #5bbfb5; --teal-soft: #173230; --ochre: #e2b45c; --ochre-soft: #2f2715;
+  --mark: #5b4a12; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14.5px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--blue); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 3px; }
+.wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px 24px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--teal); letter-spacing: .08em; text-transform: uppercase; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(24px, 3.2vw, 32px); margin: 2px 0 2px; letter-spacing: -.01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13.5px; max-width: 75ch; }
+.back { font-size: 13.5px; padding: 7px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--muted); white-space: nowrap; }
+.back:hover { border-color: var(--blue); }
+
+/* Filters */
+.filters { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px 14px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.field input, .field select { font: inherit; font-size: 13.5px; padding: 7px 9px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--fg); min-width: 0; width: 100%; }
+.pair { display: flex; gap: 6px; align-items: center; }
+.pair .dash { color: var(--muted); }
+.filters .actions { display: flex; align-items: flex-end; }
+.btn { font: inherit; font-size: 13px; padding: 7px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; white-space: nowrap; }
+.btn:hover { border-color: var(--blue); color: var(--blue); }
+
+/* Result bar */
+.resultbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.count { font-size: 14px; }
+.count b { font-family: var(--font-display); font-size: 18px; }
+.downloads { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Papers */
+.year { font-family: var(--font-display); font-weight: 700; font-size: 19px; padding: 14px 0 6px; border-bottom: 2px solid var(--fg); display: flex; justify-content: space-between; align-items: baseline; }
+.year span { font-family: var(--font-mono); font-size: 11px; font-weight: 400; color: var(--muted); }
+.papers { list-style: none; margin: 0; padding: 0; }
+.paper { padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.paper .t { font-weight: 600; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.authors { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.authors .me { color: var(--teal); font-weight: 600; }
+.more-authors { font: inherit; font-size: 12.5px; background: none; border: 0; padding: 0; color: var(--blue); cursor: pointer; }
+.meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+.meta .j { color: var(--fg); font-family: var(--font-body); font-size: 13px; font-style: italic; }
+.pill { font-family: var(--font-body); font-size: 11px; padding: 0 7px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted); line-height: 1.6; }
+.pill.Review { background: var(--blue-soft); border-color: transparent; color: var(--blue); }
+.pill.Methods { background: var(--ochre-soft); border-color: transparent; color: var(--ochre); }
+.pill.section { background: var(--teal-soft); border-color: transparent; color: var(--teal); }
+.meta a { color: var(--blue); }
+details.abs summary { cursor: pointer; font-size: 12.5px; color: var(--blue); width: fit-content; }
+details.abs p { margin: 6px 0 0; font-size: 13.5px; max-width: 95ch; }
+mark { background: var(--mark); color: inherit; border-radius: 2px; padding: 0 1px; }
+.empty { color: var(--muted); padding: 20px 0; }
+.show-more { margin: 14px auto 0; display: block; }
+footer { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); text-align: center; padding-top: 10px; }
+@media (max-width: 560px) { .filters { grid-template-columns: 1fr 1fr; } .filters .years { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: no-preference) { .btn, .back { transition: color .15s, border-color .15s; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Publications</div>
+      <h1 id="title"></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <a class="back" href="index.html">← Dashboard</a>
+  </header>
+
+  <section class="filters" aria-label="Filters">
+    <div class="field wide">
+      <label for="f-q">Search titles, abstracts, authors and journals</label>
+      <input id="f-q" type="search" placeholder="e.g. glucagon liver, or several words" autocomplete="off">
+    </div>
+    <div class="field years">
+      <label for="f-from">Years</label>
+      <div class="pair"><select id="f-from" aria-label="From year"></select><span class="dash">–</span><select id="f-to" aria-label="To year"></select></div>
+    </div>
+    <div class="field"><label for="f-journal">Journal</label><select id="f-journal"></select></div>
+    <div class="field"><label for="f-type">Type</label><select id="f-type"></select></div>
+    <div class="field"><label for="f-member">Group member</label><select id="f-member"></select></div>
+    <div class="field"><label for="f-pos">Author position</label>
+      <select id="f-pos">
+        <option value="any">Any position</option>
+        <option value="first">First author</option>
+        <option value="last">Last author</option>
+        <option value="last2">One of the last two</option>
+      </select></div>
+    <div class="field" id="section-field"><label for="f-section">Section</label><select id="f-section"></select></div>
+    <div class="field"><label for="f-sort">Sort by</label>
+      <select id="f-sort">
+        <option value="new">Newest first</option>
+        <option value="old">Oldest first</option>
+        <option value="journal">Journal (A–Z)</option>
+        <option value="title">Title (A–Z)</option>
+      </select></div>
+    <div class="field actions"><button class="btn" id="reset" type="button">Reset filters</button></div>
+  </section>
+
+  <div class="resultbar">
+    <div class="count" id="count" aria-live="polite"></div>
+    <div class="downloads">
+      <button class="btn" id="dl-csv" type="button">Download CSV</button>
+      <button class="btn" id="dl-bib" type="button">Download BibTeX</button>
+    </div>
+  </div>
+
+  <main id="list"></main>
+  <footer id="footer"></footer>
+</div>
+
+<script>
+const PUBS = /*__PUBS__*/null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* Titles may contain <i>, <sup>…; everything is escaped, then only these exact tags are restored */
+const rich = (s) => esc(s).replace(/&lt;(\/?)(i|em|b|strong|sup|sub)&gt;/g, "<$1$2>");
+const plain = (s) => String(s ?? "").replace(/<\/?[a-zA-Z][^>]*>/g, "");
+const fmtDate = (s) => { const d = new Date(String(s).slice(0, 10) + "T00:00:00"); return isNaN(d) ? "" : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); };
+const PAGE = 60;
+
+const papers = (PUBS && PUBS.papers || []).map((p, i) => ({
+  ...p, i, year: +String(p.date).slice(0, 4),
+  /* one lower-case text per paper for the search box */
+  hay: [plain(p.title), p.abstract, p.journal, (p.authors || []).map((a) => a.n).join(" ")].join(" ").toLowerCase(),
+}));
+const memberName = Object.fromEntries((PUBS && PUBS.members || []).map((m) => [m.orcid, m.name]));
+let shown = PAGE;
+
+/* ---------- Filter options ---------- */
+function fillSelect(id, options, allLabel) {
+  $(id).innerHTML = (allLabel ? `<option value="">${esc(allLabel)}</option>` : "") +
+    options.map(([v, label]) => `<option value="${esc(v)}">${esc(label)}</option>`).join("");
+}
+function setup() {
+  $("title").textContent = PUBS.group && PUBS.group.name ? `${PUBS.group.name}` : "Group publications";
+  const since = PUBS.pi && PUBS.pi.since;
+  $("sub").textContent = `${papers.length} journal articles, reviews and methods papers` +
+    (since ? ` since ${fmtDate(since)}, the first paper with ${PUBS.pi.name || "the group leader"} as last author` : "") +
+    ". Found via OpenAlex and PubMed.";
+  const years = [...new Set(papers.map((p) => p.year))].filter(Boolean).sort((a, b) => a - b);
+  fillSelect("f-from", years.map((y) => [y, `${y}`]));
+  fillSelect("f-to", years.map((y) => [y, `${y}`]));
+  $("f-from").value = years[0] || ""; $("f-to").value = years[years.length - 1] || "";
+  const journals = Object.entries(papers.reduce((acc, p) => { if (p.journal) acc[p.journal] = (acc[p.journal] || 0) + 1; return acc; }, {}))
+    .sort((a, b) => a[0].localeCompare(b[0]));
+  fillSelect("f-journal", journals.map(([j, n]) => [j, `${j} (${n})`]), "All journals");
+  const types = ["Article", "Review", "Methods"].filter((t) => papers.some((p) => p.type === t));
+  fillSelect("f-type", types.map((t) => [t, t === "Article" ? "Research articles" : t === "Review" ? "Reviews" : "Methods (JoVE)"]), "All types");
+  fillSelect("f-member", (PUBS.members || []).map((m) => [m.orcid, m.name]), "Anyone");
+  const sections = PUBS.sections || [];
+  $("section-field").hidden = !sections.length;
+  fillSelect("f-section", sections.map((s) => [s, s]), "All sections");
+  ["f-q", "f-from", "f-to", "f-journal", "f-type", "f-member", "f-pos", "f-section", "f-sort"].forEach((id) =>
+    $(id).addEventListener(id === "f-q" ? "input" : "change", () => { shown = PAGE; draw(); }));
+  $("reset").addEventListener("click", () => {
+    $("f-q").value = ""; $("f-from").value = years[0] || ""; $("f-to").value = years[years.length - 1] || "";
+    ["f-journal", "f-type", "f-member", "f-section"].forEach((id) => { $(id).value = ""; });
+    $("f-pos").value = "any"; $("f-sort").value = "new"; shown = PAGE; draw();
+  });
+  $("dl-csv").addEventListener("click", () => download("publications.csv", toCSV(current()), "text/csv"));
+  $("dl-bib").addEventListener("click", () => download("publications.bib", toBibTeX(current()), "application/x-bibtex"));
+}
+
+/* ---------- Filtering ---------- */
+function current() {
+  const words = $("f-q").value.toLowerCase().split(/\s+/).filter(Boolean);
+  const from = +$("f-from").value || 0, to = +$("f-to").value || 9999;
+  const journal = $("f-journal").value, type = $("f-type").value, member = $("f-member").value;
+  const pos = $("f-pos").value, section = $("f-section").value;
+  const list = papers.filter((p) => {
+    if (p.year < from || p.year > to) return false;
+    if (journal && p.journal !== journal) return false;
+    if (type && p.type !== type) return false;
+    if (section && !(p.sections || []).includes(section)) return false;
+    if (member || pos !== "any") {
+      const authors = p.authors || [], n = authors.length;
+      const isOk = (a) => (member ? a.m === member : !!a.m);   /* without a member chosen: any group member */
+      if (pos === "any" && !authors.some(isOk)) return false;
+      if (pos === "first" && !(n && isOk(authors[0]))) return false;
+      if (pos === "last" && !(n && isOk(authors[n - 1]))) return false;
+      if (pos === "last2" && !authors.slice(-2).some(isOk)) return false;
+    }
+    return words.every((w) => p.hay.includes(w));
+  });
+  const sort = $("f-sort").value;
+  const by = {
+    new: (a, b) => b.date.localeCompare(a.date), old: (a, b) => a.date.localeCompare(b.date),
+    journal: (a, b) => a.journal.localeCompare(b.journal) || b.date.localeCompare(a.date),
+    title: (a, b) => plain(a.title).localeCompare(plain(b.title)),
+  }[sort];
+  return list.sort(by);
+}
+
+/* ---------- Showing papers ---------- */
+function highlight(html, words) {
+  if (!words.length) return html;
+  const rx = new RegExp(`(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+  /* only highlight text between tags, never inside them */
+  return html.replace(/(^|>)([^<]+)/g, (m, a, txt) => a + txt.replace(rx, "<mark>$1</mark>"));
+}
+function authorHtml(p, expanded) {
+  const all = (p.authors || []).map((a) => a.m ? `<span class="me" title="Group member">${esc(a.n)}</span>` : esc(a.n));
+  if (expanded || all.length <= 12) return all.join(", ");
+  return `${all.slice(0, 8).join(", ")}, <button class="more-authors" data-i="${p.i}" type="button">… ${all.length - 11} more …</button>, ${all.slice(-3).join(", ")}`;
+}
+const openAuthors = new Set();
+function paperHtml(p, words) {
+  const doi = p.doi ? `<a href="https://doi.org/${esc(p.doi)}" target="_blank" rel="noopener">doi:${esc(p.doi)}</a>` : "";
+  const pmid = p.pmid ? `<a href="https://pubmed.ncbi.nlm.nih.gov/${esc(p.pmid)}/" target="_blank" rel="noopener">PMID ${esc(p.pmid)}</a>` : "";
+  return `<li class="paper">
+    <a class="t" href="${esc(p.url)}" target="_blank" rel="noopener">${highlight(rich(p.title), words)}</a>
+    <div class="authors">${authorHtml(p, openAuthors.has(p.i))}</div>
+    <div class="meta"><span class="j">${esc(p.journal)}</span><span>${fmtDate(p.date)}</span>
+      ${p.type !== "Article" ? `<span class="pill ${esc(p.type)}">${esc(p.type)}</span>` : ""}
+      ${(p.sections || []).map((s) => `<span class="pill section">${esc(s)}</span>`).join("")}
+      ${pmid}${doi}</div>
+    ${p.abstract ? `<details class="abs"${words.length && p.abstract.toLowerCase().includes(words[0]) ? " open" : ""}><summary>Abstract</summary><p>${highlight(esc(p.abstract), words)}</p></details>` : ""}
+  </li>`;
+}
+function draw() {
+  const list = current();
+  const words = $("f-q").value.toLowerCase().split(/\s+/).filter(Boolean);
+  $("count").innerHTML = `<b>${list.length}</b> of ${papers.length} papers`;
+  if (!list.length) { $("list").innerHTML = '<p class="empty">No papers match these filters.</p>'; return; }
+  const part = list.slice(0, shown);
+  let out = "";
+  if ($("f-sort").value === "new" || $("f-sort").value === "old") {
+    /* grouped by year, with the number of matching papers per year */
+    const perYear = list.reduce((acc, p) => { acc[p.year] = (acc[p.year] || 0) + 1; return acc; }, {});
+    let year = null;
+    for (const p of part) {
+      if (p.year !== year) { if (year !== null) out += "</ul>"; year = p.year; out += `<h2 class="year">${year}<span>${perYear[year]} paper${perYear[year] === 1 ? "" : "s"}</span></h2><ul class="papers">`; }
+      out += paperHtml(p, words);
+    }
+    out += "</ul>";
+  } else {
+    out = `<ul class="papers">${part.map((p) => paperHtml(p, words)).join("")}</ul>`;
+  }
+  if (list.length > shown) out += `<button class="btn show-more" id="show-more" type="button">Show ${Math.min(PAGE, list.length - shown)} more (${list.length - shown} left)</button>`;
+  $("list").innerHTML = out;
+  const more = $("show-more"); if (more) more.addEventListener("click", () => { shown += PAGE; draw(); });
+  $("list").querySelectorAll(".more-authors").forEach((b) => b.addEventListener("click", () => { openAuthors.add(+b.dataset.i); draw(); }));
+}
+
+/* ---------- Downloads (of the papers currently shown by the filters) ---------- */
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type: type + ";charset=utf-8" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+function toCSV(list) {
+  const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const head = ["Title", "Authors", "Journal", "Date", "Year", "Type", "DOI", "PMID", "Link", "Sections", "Group members"];
+  const rows = list.map((p) => [plain(p.title), (p.authors || []).map((a) => a.n).join("; "), p.journal, p.date, p.year, p.type,
+    p.doi, p.pmid, p.url, (p.sections || []).join("; "), (p.authors || []).filter((a) => a.m).map((a) => a.n).join("; ")]);
+  return "﻿" + [head, ...rows].map((r) => r.map(cell).join(",")).join("\r\n");  /* ﻿: Excel reads æøå correctly */
+}
+function toBibTeX(list) {
+  const clean = (s) => plain(s).replace(/([&%$#_])/g, "\\$1");
+  const used = new Set();
+  return list.map((p) => {
+    const first = (p.authors && p.authors[0] && p.authors[0].n || "anon").split(/\s+/).pop().normalize("NFD").replace(/[^A-Za-z]/g, "") || "anon";
+    const word = (plain(p.title).match(/[A-Za-z]{4,}/) || ["paper"])[0].toLowerCase();
+    let key = `${first}${p.year}${word}`, n = 2;
+    while (used.has(key)) key = `${first}${p.year}${word}${n++}`;
+    used.add(key);
+    const fields = [
+      ["author", (p.authors || []).map((a) => clean(a.n)).join(" and ")],
+      ["title", `{${clean(p.title)}}`], ["journal", clean(p.journal)], ["year", p.year],
+      ["doi", p.doi], ["pmid", p.pmid], ["url", p.url],
+    ].filter(([, v]) => v);
+    return `@article{${key},\n${fields.map(([k, v]) => `  ${k} = {${v}}`).join(",\n")}\n}`;
+  }).join("\n\n") + "\n";
+}
+
+if (PUBS) {
+  setup(); draw();
+  $("footer").textContent = `Updated ${new Date(PUBS.generated).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })} · names in colour are group members (ORCID in the dashboard's config)`;
+} else {
+  $("list").innerHTML = '<p class="empty">No publication data yet. Add the group\'s ORCIDs to config.yml and rebuild.</p>';
+}
+</script>
