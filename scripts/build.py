@@ -439,6 +439,7 @@ def mark_members(papers: list[dict], member_orcids: list[str]) -> dict[str, str]
 
 # Group papers the build left out, and why (written to publications_report.txt)
 PUB_REPORT: list[dict] = []
+LAST_AUTHOR_REASON = "last author is not a group member, and fewer than two group members"
 
 
 def pub_row(p: dict, names: dict[str, str]) -> dict:
@@ -456,8 +457,7 @@ def write_pub_report(path: pathlib.Path) -> None:
     lines = [f"Group publications - report, built {dt.datetime.now().strftime('%Y-%m-%d %H:%M')}",
              "Papers found for the group's ORCIDs that are NOT on the publications page, and why.",
              "To keep one anyway, add its DOI under include_papers in config.yml.", ""]
-    groups = [("LEFT OUT: last author is not the PI or a section lead",
-               lambda r: r["reason"] == "last author is not the PI or a section lead"),
+    groups = [(f"LEFT OUT: {LAST_AUTHOR_REASON}", lambda r: r["reason"] == LAST_AUTHOR_REASON),
               ("LEFT OUT: listed in exclude_papers", lambda r: r["reason"] == "listed in exclude_papers"),
               ("KEPT: listed in include_papers", lambda r: r["status"] == "kept"),
               ("NOT FOUND: listed in include_papers", lambda r: r["status"] == "not found"),
@@ -598,20 +598,21 @@ def fetch_group_pubs(cfg: dict) -> dict:
         else:
             log("        no paper with the PI as last author found, so no start date applied")
 
-    # Only papers with the PI or a section lead as LAST author (unless listed in include_papers)
-    seniors = {o for o in [pi] + [s["lead"] for s in sections] if o}
-    if seniors:
+    # Keep a paper when (1) its LAST author is a group member (anyone under orcids, the PI or a
+    # section lead), or (2) at least two group members are authors, or (3) it is in include_papers
+    if orcids:
         kept = []
         for p in papers:
             last = p["authors"][-1].get("member", "") if p["authors"] else ""
-            if last in seniors:
+            n_members = len({a["member"] for a in p["authors"] if a.get("member")})
+            if last or n_members >= 2:
                 kept.append(p)
             elif p["doi"] and p["doi"] in always_keep:
                 kept.append(p)
                 PUB_REPORT.append({**pub_row(p, names), "status": "kept", "reason": "listed in include_papers"})
             else:
-                pub_left_out(p, names, "last author is not the PI or a section lead")
-        log(f"        last author is the PI or a section lead: {plural(len(kept), 'paper')} kept, "
+                pub_left_out(p, names, LAST_AUTHOR_REASON)
+        log(f"        group member as last author, or 2+ group members: {plural(len(kept), 'paper')} kept, "
             f"{len(papers) - len(kept)} left out (see publications_report.txt)")
         papers = kept
     found = {p["doi"] for p in merged.values() if p["doi"]}
@@ -620,9 +621,11 @@ def fetch_group_pubs(cfg: dict) -> dict:
         PUB_REPORT.append({"status": "not found", "reason": "listed in include_papers, but not found by the search",
                            "date": "", "title": "", "journal": "", "last_author": "", "doi": d})
 
+    # Sections: the lead is the first author or one of the last two authors
     for p in papers:
-        senior = {a.get("member") for a in p["authors"][-2:] if a.get("member")}
-        p["sections"] = [s["name"] for s in sections if s["lead"] in senior]
+        lead_positions = p["authors"][:1] + p["authors"][-2:]
+        leads_here = {a.get("member") for a in lead_positions if a.get("member")}
+        p["sections"] = [s["name"] for s in sections if s["lead"] in leads_here]
 
     both = sum(len(p["sources"]) == 2 for p in papers)
     only_oa = [p for p in papers if p["sources"] == ["OpenAlex"]]

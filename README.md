@@ -71,11 +71,11 @@ group:
   orcids:
     - "0000-0002-1234-5678"
     - "0000-0001-8765-4321"
-  # Optional. A paper belongs to a section when the lead is one of the last two authors.
-  # Papers with a section lead as last author are included, like the PI's
+  # Optional. A paper belongs to a section when the lead is its first author or one of
+  # its last two authors. Section leads count as group members
   sections:
     - {name: "Glucagon", lead: "0000-0002-1234-5678"}
-  # Optional. DOIs of papers to keep even though the last author isn't the PI or a lead
+  # Optional. DOIs of papers to keep even though they don't meet the rules below
   include_papers: []
   # Optional. DOIs of papers to leave out (e.g. a correction notice listed as an article)
   exclude_papers: []
@@ -85,8 +85,9 @@ Click **Commit changes**. The page rebuilds within a few minutes. The "Latest pu
 box and the chart switch from example to real data, and an **All publications →** link
 appears, leading to the publications page.
 
-**The publications page** lists every paper since the PI's first last-author paper that has
-the PI or a section lead as **last** author. Papers that are left out are listed, with the
+**The publications page** lists every paper since the PI's first last-author paper where
+either the **last** author is a group member (anyone under `orcids`, the PI or a section
+lead), or at least **two** group members are authors. Papers that are left out are listed, with the
 reason, in `publications_report.txt` next to the page
 (`https://…/WewerAlbrechtsen_homepage/publications_report.txt`); to keep one anyway, add its DOI
 under `include_papers`.

@@ -15,14 +15,18 @@ group:
     - "0000-0003-2144-1385"  # Marie
     - "0009-0005-2855-208X"  # Annelaura
     - "0000-0003-4000-5669"  # Sasha
-    - "0009-0006-2200-8099"  # Jesper
+    - "0000-0002-7360-8653"  # Cesar
     - "0009-0005-4575-2593"  # Alexander
+    - "0009-0006-2200-8099"  # Jesper
+    - "0000-0001-6528-5615"  # Nina
+    - "0009-0005-7609-3308"  # Caroline
+    - "0000-0002-3861-8469"  # Michael
 
   # The group leader. The publications page starts at this person's first
   # paper as last author.
   pi_orcid: "0000-0003-4230-5753"     # Nicolai J. Wewer Albrechtsen
   # Sections, each with one lead (by ORCID). A paper belongs to a section when
-  # the lead is one of its last two authors.
+  # the lead is its first author or one of its last two authors.
   sections: [
     {name: "Preclinical section", lead: "0000-0003-2144-1385"},
     {name: "Clinical section",    lead: "0000-0003-4000-5669"},

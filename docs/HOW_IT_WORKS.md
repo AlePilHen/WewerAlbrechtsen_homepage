@@ -209,12 +209,15 @@ What happens:
    they use most often.
 7. **Start date.** The earliest paper with the PI (`pi_orcid`) as **last** author sets the
    start date. Earlier papers (e.g. from the PI's own PhD) are left out.
-8. **Last author.** Only papers whose **last** author is the PI or one of the section leads
-   are kept. Papers whose DOI is listed in `include_papers` are kept anyway (for shared senior
-   authorship, where the PI is second to last, or consortium papers, where the consortium name
-   comes last). If there is no PI and no section lead in `config.yml`, this step is skipped.
+8. **Group papers only.** A paper is kept when
+   - its **last** author is a group member (anyone under `orcids`, the PI or a section lead), or
+   - at least **two** group members are among its authors, in any position.
+
+   Papers whose DOI is listed in `include_papers` are kept anyway (e.g. shared senior
+   authorship or consortium papers with only one group member). Everything else (typically
+   collaborations where one member is a middle author) is left out and listed in the report.
 9. **Sections.** Each section in `config.yml` has one lead (an ORCID). A paper belongs to a
-   section when the lead is one of the **last two** authors. A paper can belong to several
+   section when the lead is the **first** author or one of the **last two** authors. A paper can belong to several
    sections, or none.
 10. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
    only in PubMed, how many have abstracts, and lists recent papers that are "not yet in PubMed".
@@ -501,8 +504,8 @@ browser.
 | A passed deadline is still shown | The deadline wasn't recognised | Look the event up in `events_report.txt` ("no deadline found") and check how its page writes the deadline |
 | A recent group paper is missing | Not in OpenAlex or PubMed yet, or the member's ORCID isn't linked to it | Check the paper's page in OpenAlex; ask the member to link the paper in their ORCID record |
 | A group member's name isn't in colour on some papers | The paper has no ORCIDs and the member's name is spelled differently there, or two members share surname and first initial | Ask the member to link the paper in their ORCID record |
-| A paper is in the wrong section, or in none | The section lead isn't among the last two authors, or their ORCID is missing on that paper | Check the author list on the publications page. Sections are decided by author position only |
-| A group paper is missing from the publications page | Its last author isn't the PI or a section lead, or the last author wasn't recognised (no ORCID, different spelling) | Look it up in `publications_report.txt`; if it should be there, add its DOI to `include_papers` |
+| A paper is in the wrong section, or in none | The section lead isn't the first author or among the last two authors, or their ORCID is missing on that paper | Check the author list on the publications page. Sections are decided by author position only |
+| A group paper is missing from the publications page | The last author isn't a group member and only one member is on the paper, or a member wasn't recognised (no ORCID, different spelling) | Look it up in `publications_report.txt`; if it should be there, add its DOI to `include_papers` |
 | `!!  include_papers: … was not found` | The paper isn't linked to any of the group's ORCIDs in OpenAlex or PubMed, or the DOI is mistyped | Check the DOI; ask the member to link the paper in their ORCID record |
 | A non-research item appears (e.g. a correction notice) | The source labels it as an article | Add its DOI to `exclude_papers` |
 | `a source failed: kept N papers from the previously published list` | OpenAlex or PubMed failed today | Nothing to do if it's a one-off; check the `!!` line for the reason |
