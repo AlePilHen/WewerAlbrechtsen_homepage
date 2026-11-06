@@ -201,29 +201,48 @@ What happens:
    That way a temporary OpenAlex or PubMed problem doesn't make papers disappear from the
    publications page.
 5. **Exclusions.** Any DOI listed in `exclude_papers` is removed.
-6. **Group members** (`mark_members`). An author is a group member when their ORCID is in
+6. **Checking ORCID links** (`orcid_first_names`, `check_orcid_names`). OpenAlex links ORCIDs
+   to *author profiles*, not to single papers, and sometimes merges two people with similar
+   names into one profile (e.g. Caroline Hansen's ORCID on a profile mostly belonging to
+   Christian M. Hansen). Its papers then come back when searching for the wrong person's ORCID.
+   To catch this, the build reads each member's first name from the public ORCID register
+   (pub.orcid.org, no key needed) and from PubMed records (where ORCIDs are linked paper by
+   paper). On each paper, if the first name printed next to a member's ORCID doesn't fit
+   (`same_first_name`: short forms like Chris/Christian and small spelling differences are
+   allowed), the link is ignored on that paper. The paper then only stays if it meets the
+   rules in step 9 through other group members. Names printed with initials only ("C. M. Hansen") can't be
+   checked and are accepted. If a member's ORCID record can't be read, PubMed names are used
+   alone, and if there are none either, the check is skipped for that member.
+   The terminal shows a `!!` line per member with ignored links, and the papers are listed in
+   `publications_report.txt`. The real fix is to correct the profile at OpenAlex: the person
+   claims their profile at openalex.org and removes the works that aren't theirs
+   (https://help.openalex.org/how-to/fixing-authors/).
+7. **Group members** (`mark_members`). An author is a group member when their ORCID is in
    `config.yml` (under `orcids`, `pi_orcid` or as a section lead). Some papers have no ORCIDs for their authors; there, an author is matched by
-   surname and first initial, using the spellings the member has on their other papers
+   surname and first initial (and, when the paper prints a full first name, that name must fit
+   too, so "Christian Hansen" is never matched to Caroline Hansen), using the spellings the
+   member has on their other papers
    (`_name_keys`, which also treats the different kinds of hyphen as the same). A name pair
    shared by two members is never used. Each member is shown with the spelling of their name
-   they use most often.
-7. **Start date.** The earliest paper with the PI (`pi_orcid`) as **last** author sets the
+   they use most often, preferring one with the full first name ("Caroline Hansen" over
+   "C. Hansen"). Names are always taken as printed on the paper, not from OpenAlex's profile.
+8. **Start date.** The earliest paper with the PI (`pi_orcid`) as **last** author sets the
    start date. Earlier papers (e.g. from the PI's own PhD) are left out.
-8. **Group papers only.** A paper is kept when
+9. **Group papers only.** A paper is kept when
    - its **last** author is a group member (anyone under `orcids`, the PI or a section lead), or
    - at least **two** group members are among its authors, in any position.
 
    Papers whose DOI is listed in `include_papers` are kept anyway (e.g. shared senior
    authorship or consortium papers with only one group member). Everything else (typically
    collaborations where one member is a middle author) is left out and listed in the report.
-9. **Sections.** Each section in `config.yml` has one lead (an ORCID). A paper belongs to a
+10. **Sections.** Each section in `config.yml` has one lead (an ORCID). A paper belongs to a
    section when the lead is the **first** author or one of the **last two** authors. A paper can belong to several
    sections, or none.
-10. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
+11. **Report.** The terminal shows how many papers were in both sources, only in OpenAlex and
    only in PubMed, how many have abstracts, and lists recent papers that are "not yet in PubMed".
-11. **Latest publication** is the paper with the newest date that is not in the future
+12. **Latest publication** is the paper with the newest date that is not in the future
     (journals sometimes date a print issue ahead). The page shows which sources found it.
-12. **Papers per year** counts the papers by year, for the last eight years.
+13. **Papers per year** counts the papers by year, for the last eight years.
 
 The full list goes to `site/publications.json` and is embedded in `site/publications.html`
 (see step 6). Every paper that was found but left out (by the start date, the last-author rule
@@ -505,6 +524,7 @@ browser.
 | A recent group paper is missing | Not in OpenAlex or PubMed yet, or the member's ORCID isn't linked to it | Check the paper's page in OpenAlex; ask the member to link the paper in their ORCID record |
 | A group member's name isn't in colour on some papers | The paper has no ORCIDs and the member's name is spelled differently there, or two members share surname and first initial | Ask the member to link the paper in their ORCID record |
 | A paper is in the wrong section, or in none | The section lead isn't the first author or among the last two authors, or their ORCID is missing on that paper | Check the author list on the publications page. Sections are decided by author position only |
+| A member's name is shown wrongly, or papers by someone with a similar name appear | OpenAlex has merged two people into one profile | The `!!  ORCID …` line and `publications_report.txt` show which papers were caught. Ask the member to claim their OpenAlex profile and remove the wrong works (https://help.openalex.org/how-to/fixing-authors/); the change shows up within about two days |
 | A group paper is missing from the publications page | The last author isn't a group member and only one member is on the paper, or a member wasn't recognised (no ORCID, different spelling) | Look it up in `publications_report.txt`; if it should be there, add its DOI to `include_papers` |
 | `!!  include_papers: … was not found` | The paper isn't linked to any of the group's ORCIDs in OpenAlex or PubMed, or the DOI is mistyped | Check the DOI; ask the member to link the paper in their ORCID record |
 | A non-research item appears (e.g. a correction notice) | The source labels it as an article | Add its DOI to `exclude_papers` |

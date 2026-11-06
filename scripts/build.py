@@ -25,7 +25,9 @@ import random
 import re
 import sys
 import time
+import unicodedata
 from collections import Counter
+from difflib import SequenceMatcher
 
 import feedparser
 import requests
@@ -348,7 +350,9 @@ def from_openalex(w: dict) -> dict | None:
     pmid = str((w.get("ids") or {}).get("pmid") or "").rstrip("/").split("/")[-1]
     authors = []
     for a in w.get("authorships") or []:
-        name = (a.get("author") or {}).get("display_name") or a.get("raw_author_name") or ""
+        # The name as printed on the paper. (The profile's display_name can belong to a different
+        # person when OpenAlex has mixed up two people with similar names.)
+        name = a.get("raw_author_name") or (a.get("author") or {}).get("display_name") or ""
         authors.append({"name": name, "orcid": norm_orcid((a.get("author") or {}).get("orcid")), "last": "", "first": ""})
     return {"title": clean_title(w.get("title")).rstrip("."), "authors": authors, "journal": journal,
             "date": w.get("publication_date") or "", "doi": doi, "pmid": pmid, "type": kind,
@@ -410,9 +414,103 @@ def _name_keys(author: dict) -> set[tuple[str, str]]:
     return keys
 
 
-def mark_members(papers: list[dict], member_orcids: list[str]) -> dict[str, str]:
+ORCID_API = "https://pub.orcid.org/v3.0/{}/person"
+
+
+def fold(text: str) -> str:
+    """Lower case without accents (Søren -> soren), for comparing names."""
+    text = text.lower().replace("ø", "o").replace("æ", "ae").replace("ß", "ss")
+    return "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
+
+
+def printed_first_names(author: dict) -> set[str]:
+    """The first name printed on a paper, e.g. {'caroline'}, or {'marie', 'louise'} for
+    'Marie-Louise'. Empty if the paper only gives initials ('C. M. Hansen', 'CM')."""
+    given = author.get("first") or ""
+    name = author.get("name", "")
+    if not given:
+        if "," in name:                      # "Hansen, Caroline"
+            given = name.split(",", 1)[1]
+        else:                                # "Caroline Hansen"
+            given = " ".join(name.split()[:-1])
+    first_word = (re.split(r"[\s.]+", given.strip()) or [""])[0]
+    parts = re.split(r"[-\u2010-\u2015]+", first_word)
+    return {fold(w) for w in parts if len(w) >= 2 and not w.isupper()}
+
+
+def same_first_name(printed: set[str], known: set[str]) -> bool:
+    """True if a printed first name fits one of a person's known first names. Allows short forms
+    (Chris/Christian) and small spelling differences (Nicolai/Nicolaj)."""
+    return any(p.startswith(k) or k.startswith(p) or SequenceMatcher(None, p, k).ratio() >= 0.8
+               for p in printed for k in known)
+
+
+def orcid_first_names(orcids: list[str]) -> dict[str, set[str]]:
+    """Each member's first names, from the public ORCID register (no key needed).
+    A member whose record can't be read (or whose name is private) gets an empty set."""
+    known: dict[str, set[str]] = {}
+    for o in orcids:
+        names = set()
+        try:
+            r = requests.get(ORCID_API.format(o), headers={**UA, "Accept": "application/json"}, timeout=20)
+            r.raise_for_status()
+            person = r.json() or {}
+            name = person.get("name") or {}
+            texts = [((name.get("given-names") or {}).get("value") or "")]
+            family = fold((name.get("family-name") or {}).get("value") or "")
+            credit = (name.get("credit-name") or {}).get("value") or ""
+            texts += [" ".join(w for w in credit.split() if fold(w) != family)]
+            texts += [n.get("content") or "" for n in (person.get("other-names") or {}).get("other-name") or []]
+            for t in texts:
+                names |= {fold(w) for w in re.split(r"[\s.\-]+", t) if len(w) >= 2 and not w.isupper()}
+            names.discard(family)
+        except Exception as e:
+            log(f"        ORCID register: could not read {o} ({short(str(e), 60)})")
+        known[o] = names
+    return known
+
+
+def check_orcid_names(papers: list[dict], orcids: list[str], known: dict[str, set[str]]) -> dict[str, set[str]]:
+    """Remove ORCID links where the first name printed on the paper doesn't fit the person's
+    known first names (e.g. 'Christian M. Hansen' linked to Caroline Hansen's ORCID).
+    Known first names come from the ORCID register plus PubMed records, where ORCIDs are
+    linked paper by paper. Returns each member's known first names (used for name matching)."""
+    known = {o: set(known.get(o, set())) for o in orcids}
+    for p in papers:
+        if p.get("sources") == ["PubMed"]:
+            for a in p["authors"]:
+                if a["orcid"] in known:
+                    known[a["orcid"]] |= printed_first_names(a)
+    mismatches: dict[str, list[str]] = {o: [] for o in orcids}
+    for p in papers:
+        for a in p["authors"]:
+            o = a["orcid"]
+            if o not in known or not known[o]:
+                continue                      # not a member, or nothing to compare with
+            printed = printed_first_names(a)
+            if printed and not same_first_name(printed, known[o]):
+                a["orcid"] = ""
+                mismatches[o].append(a["name"])
+                PUB_REPORT.append({"date": p["date"], "title": plain(p["title"]), "journal": p["journal"],
+                                   "doi": p["doi"], "last_author": p["authors"][-1]["name"],
+                                   "status": "name mismatch",
+                                   "reason": f"printed as '{a['name']}', but ORCID {o} belongs to someone "
+                                             f"called {'/'.join(sorted(known[o])).title()}"})
+    for o, wrong in mismatches.items():
+        if wrong:
+            example = Counter(wrong).most_common(1)[0][0]
+            log(f"    !!  ORCID {o}: {plural(len(wrong), 'paper')} linked to it in OpenAlex print a different "
+                f"first name (e.g. {example}); not counted as this member's (see publications_report.txt)")
+    return known
+
+
+def mark_members(papers: list[dict], member_orcids: list[str],
+                 first_names: dict[str, set[str]] | None = None) -> dict[str, str]:
     """Mark which authors are group members (by ORCID, or by name where a paper has no ORCIDs).
+    Name matching uses surname + first initial; when the paper prints a full first name, it must
+    also fit the member's known first names (so 'Christian Hansen' is not Caroline Hansen).
     Returns {orcid: the name most often used for that person}."""
+    first_names = first_names or {}
     seen_names: dict[str, Counter] = {o: Counter() for o in member_orcids}
     member_keys: dict[str, set] = {o: set() for o in member_orcids}
     for p in papers:
@@ -431,10 +529,16 @@ def mark_members(papers: list[dict], member_orcids: list[str]) -> dict[str, str]
                 a["member"] = a["orcid"]
             elif not a["orcid"]:
                 hits = {owner[k] for k in _name_keys(a) if owner.get(k)}
+                printed = printed_first_names(a)
+                hits = {o for o in hits
+                        if not (printed and first_names.get(o)) or same_first_name(printed, first_names[o])}
                 a["member"] = hits.pop() if len(hits) == 1 else ""
             else:
                 a["member"] = ""
-    return {o: (c.most_common(1)[0][0] if c else o) for o, c in seen_names.items()}
+    # Display name: the most used spelling, preferring one with a full first name ("Caroline Hansen"
+    # over "C. Hansen")
+    return {o: (max(c, key=lambda n: (bool(printed_first_names({"name": n})), c[n])) if c else o)
+            for o, c in seen_names.items()}
 
 
 # Group papers the build left out, and why (written to publications_report.txt)
@@ -458,6 +562,9 @@ def write_pub_report(path: pathlib.Path) -> None:
              "Papers found for the group's ORCIDs that are NOT on the publications page, and why.",
              "To keep one anyway, add its DOI under include_papers in config.yml.", ""]
     groups = [(f"LEFT OUT: {LAST_AUTHOR_REASON}", lambda r: r["reason"] == LAST_AUTHOR_REASON),
+              ("ORCID LINK IGNORED: the first name on the paper doesn't match the ORCID's owner "
+               "(the paper may still be on the page through other group members)",
+               lambda r: r["status"] == "name mismatch"),
               ("LEFT OUT: listed in exclude_papers", lambda r: r["reason"] == "listed in exclude_papers"),
               ("KEPT: listed in include_papers", lambda r: r["status"] == "kept"),
               ("NOT FOUND: listed in include_papers", lambda r: r["status"] == "not found"),
@@ -472,6 +579,8 @@ def write_pub_report(path: pathlib.Path) -> None:
             if r["title"]:
                 lines.append(f"{r['date'] or '----------'}  {short(r['title'], 90)}")
                 lines.append(f"{'':12}{r['journal']} · last author: {r['last_author']}")
+            if r["status"] == "name mismatch":
+                lines.append(f"{'':12}{r['reason']}")
             if r["doi"]:
                 lines.append(f"{'':12}doi:{r['doi']}")
         lines.append("")
@@ -577,7 +686,8 @@ def fetch_group_pubs(cfg: dict) -> dict:
     excluded = {norm_doi(d) for d in g.get("exclude_papers") or [] if str(d).strip()}
     always_keep = {norm_doi(d) for d in g.get("include_papers") or [] if str(d).strip()}
     papers = sorted(merged.values(), key=lambda p: p["date"])
-    names = mark_members(papers, orcids)
+    first_names = check_orcid_names(papers, orcids, orcid_first_names(orcids))
+    names = mark_members(papers, orcids, first_names)
     for p in papers:
         if p["doi"] and p["doi"] in excluded:
             pub_left_out(p, names, "listed in exclude_papers")
