@@ -1,16 +1,44 @@
 # Wewer Albrechtsen Group dashboard
 
-A start page for the group: new papers in the group's fields, science news, the group's
-latest publication, a calendar of courses and conferences, and daily boxes (Protein
-Spotlight, a data insight from Our World in Data, and PDB-101's Molecule of the Month).
-A second page lists all of the group's publications, with search and filters.
+A daily start page for the [Wewer Albrechtsen group](https://alepilhen.github.io/WewerAlbrechtsen_homepage/)
+(Clinical Biochemistry, Bispebjerg Hospital). It collects new papers in the group's research
+areas, science news, upcoming courses and conferences, and the group's own publications in one
+place, and rebuilds itself every morning.
 
-It is a static web page. Once a day, GitHub Actions fetches fresh data and republishes
-the page on GitHub Pages. There is no server to run and it costs nothing.
+**Live page:** <https://alepilhen.github.io/WewerAlbrechtsen_homepage/>
+
+![The dashboard, shown with example data](docs/img/dashboard.png)
+
+## What it shows
+
+**The dashboard** (`index.html`) has three columns:
+
+| Left: the group | Middle: reading | Right: daily and monthly picks |
+|---|---|---|
+| The group's latest publication | Science news: Nature, Science, eLife Magazine, Retraction Watch | Protein Spotlight (SIB) |
+| Courses and conferences, with registration deadlines | New papers in the group's fields, in tabs (e.g. plasma proteomics, glucagon, incretin drugs, MASLD/MASH, clinical trials), with filters for preprints, reviews and key journals | A data insight from Our World in Data |
+| The group's papers per year | | PDB-101's Molecule of the Month |
+| Quick links to databases, societies and funders | | |
+
+A search box at the top sends a gene, protein or topic straight to PubMed, UniProt or
+Open Targets.
+
+**The publications page** (`publications.html`) lists all of the group's papers since the PI's
+first paper as last author. It can be searched (titles, abstracts, authors and journals) and
+filtered by year, journal, paper type, group member and author position, and research section.
+The list can be downloaded as a spreadsheet (CSV) or for a reference manager (BibTeX).
+
+![The publications page, shown with example data](docs/img/publications.png)
+
+## How it works
+
+The page is a static website: there is no server or database. Once a day, GitHub Actions
+runs a Python script that fetches fresh data from public sources, puts it into two HTML
+templates, and publishes the result on GitHub Pages. Everything needed for that is free.
 
 ```
 config.yml ─┐                     ┌─ Europe PMC        (new papers; PubMed cross-check)
-template/  ─┼─► scripts/build.py ─┼─ OpenAlex          (group publications)
+template/  ─┼─► scripts/build.py ─┼─ OpenAlex, ORCID   (group publications)
             │         │           ├─ RSS feeds         (news)
             │         │           ├─ Protein Spotlight, Our World in Data, PDB-101
             │         │           └─ DDSA, DDEA, TeSS, … (courses and conferences)
@@ -19,208 +47,87 @@ template/  ─┼─► scripts/build.py ─┼─ OpenAlex          (group publ
             └──────────► GitHub Pages
 ```
 
-How the build works, step by step, is described in [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md).
+If a source can't be reached, the rest of the page is still built, and a status line at the
+bottom of the page shows which source failed.
 
----
+## Data sources
 
-## 1. Look at the example first (optional)
+| Source | Used for |
+|---|---|
+| [Europe PMC](https://europepmc.org/) (REST API) | New papers and preprints in the group's fields; the group's papers in PubMed, with abstracts |
+| [OpenAlex](https://openalex.org/) (API, free key) | The group's papers, found by ORCID, usually within days of publication |
+| [ORCID](https://orcid.org/) (public API) | Group members' names, to catch papers wrongly linked to a member |
+| Nature, Science, eLife, Retraction Watch (RSS) | News |
+| [Protein Spotlight](https://www.proteinspotlight.org/) (SIB) | Monthly protein story |
+| [Our World in Data](https://ourworldindata.org/data-insights) | Latest data insight, with chart |
+| [RCSB PDB-101](https://pdb101.rcsb.org/motm/motm-by-date) | Molecule of the Month, with image |
+| [DDSA](https://ddsa.dk/), [DDEA](https://ddeacademy.dk/), [NNF Science Cluster](https://sciencecluster.dk/), [ELIXIR TeSS](https://tess.elixir-europe.org/) and conference websites | Courses, events and conferences |
+| [ChEMBL](https://www.ebi.ac.uk/chembl/) and [UniProt](https://www.uniprot.org/) | "Target of the day" (optional, off by default) |
 
-Open `example.html` in your browser. It shows the layout with example data;
-no installation is needed.
+Web pages are only read where the site's `robots.txt` allows it. Openly licensed images (the
+data-insight chart and the Molecule of the Month) are stored with the page; news thumbnails are
+shown from the publishers' own sites and never copied.
 
-## 2. Put it on GitHub (about 15 minutes)
+## Repository layout
 
-You need a free GitHub account. Ideally create a GitHub *organisation* for the group,
-so the dashboard doesn't depend on one person's account.
-
-1. **Create a repository.** On github.com click **New repository**. Give it a name such as
-   `dashboard`, choose **Public**, and click **Create repository**.
-2. **Upload the files.** On the new repository's page click **uploading an existing file**.
-   Drag in *everything inside* the `research-dashboard` folder, including the hidden
-   `.github` folder. On a Mac, press `Cmd + Shift + .` in Finder to show hidden folders.
-   Click **Commit changes**.
-   - Check that the file `.github/workflows/build.yml` now appears in the repository.
-     If it doesn't, create it via **Add file → Create new file**, type
-     `.github/workflows/build.yml` as the name, and paste in the file's contents.
-3. **Turn on GitHub Pages.** Go to **Settings → Pages**. Under *Build and deployment → Source*,
-   choose **GitHub Actions**.
-4. **Run the first build.** Go to the **Actions** tab. If asked, click
-   **I understand my workflows, go ahead and enable them**. Click
-   **Build and publish dashboard → Run workflow → Run workflow**.
-   It takes 1–3 minutes, and a green tick means it worked.
-5. **Open the page.** It's at `https://<your-account>.github.io/<repository-name>/`.
-   The link is also shown under **Settings → Pages**.
-6. **Share it.** Send the link to the group and suggest setting it as their browser's start page.
-
-From now on the page rebuilds every morning at 04:17 UTC (06:17 Copenhagen time in summer,
-05:17 in winter), and whenever you change a file. To change the time, edit the `cron:` line
-in `.github/workflows/build.yml`.
-
-## 3. Add the group's publications
-
-Open `config.yml` on GitHub, click the pencil icon, and fill in these settings:
-
-```yaml
-# at the top of the file: the address of the published page
-site_url: https://alepilhen.github.io/WewerAlbrechtsen_homepage/
-
-group:
-  # The PI. Sets the start of the list: the first paper with this person as last author
-  pi_orcid: "0000-0003-4230-5753"
-  # Group members. Their papers are searched for and their names shown in colour
-  orcids:
-    - "0000-0002-1234-5678"
-    - "0000-0001-8765-4321"
-  # Optional. A paper belongs to a section when the lead is its first author or one of
-  # its last two authors. Section leads count as group members
-  sections:
-    - {name: "Glucagon", lead: "0000-0002-1234-5678"}
-  # Optional. DOIs of papers to keep even though they don't meet the rules below
-  include_papers: []
-  # Optional. DOIs of papers to leave out (e.g. a correction notice listed as an article)
-  exclude_papers: []
+```
+.github/workflows/build.yml   daily build and publish (GitHub Actions)
+config.yml                    everything that can be adjusted: searches, journals, feeds,
+                              group members, sections, calendar sources, links
+scripts/build.py              fetches the data and writes the pages
+template/index.html           the dashboard (HTML, CSS and JavaScript)
+template/publications.html    the publications page
+sample_data.json              example data, for building without internet access
+example.html                  the dashboard built from the example data
+docs/HOW_TO_SET_UP.md         step-by-step set-up and configuration guide
+docs/HOW_IT_WORKS.md          how the build script works, step by step
 ```
 
-Click **Commit changes**. The page rebuilds within a few minutes. The "Latest publication"
-box and the chart switch from example to real data, and an **All publications →** link
-appears, leading to the publications page.
+Each build writes these files to `site/` (not stored in the repository):
 
-**The publications page** lists every paper since the PI's first last-author paper where
-either the **last** author is a group member (anyone under `orcids`, the PI or a section
-lead), or at least **two** group members are authors. Papers that are left out are listed, with the
-reason, in `publications_report.txt` next to the page
-(`https://…/WewerAlbrechtsen_homepage/publications_report.txt`); to keep one anyway, add its DOI
-under `include_papers`.
-
-On the page you can search titles and abstracts, filter by year, journal, type, group member (and their author
-position: first, last or one of the last two) and section, sort the list, and download what
-you see as a spreadsheet (CSV) or for a reference manager (BibTeX). The list is also saved as
-`publications.json` next to the page.
-
-**Where the papers come from.** They are found in two places and merged: **OpenAlex**, which
-picks up new papers within days of publication, and **PubMed** (via Europe PMC), as a
-cross-check and the main source of abstracts. Journal articles and reviews are included, and
-JoVE papers are included with the label "Methods". Preprints, conference abstracts,
-editorials and letters are not. A paper is only found if a member's ORCID is linked to it; if
-papers are missing, add a name search for PubMed as well, e.g.
-`extra_query: 'AUTH:"Wewer Albrechtsen NJ"'`.
-
-**If a source is down.** When OpenAlex or PubMed fails, the build keeps the papers from the
-previously published list (read from `site_url`), so nothing disappears from the page for a day.
-
-### Give the build an OpenAlex key (free, 5 minutes)
-
-OpenAlex requires a free API key. Without one, the OpenAlex search fails with
-`HTTP 401` and only PubMed is used, so very recent papers are missed.
-
-1. Create a free account at [openalex.org](https://openalex.org) and copy your key from
-   [openalex.org/settings/api](https://openalex.org/settings/api).
-2. **For GitHub:** in the repository, go to **Settings → Secrets and variables → Actions →
-   New repository secret**. Name it `OPENALEX_API_KEY`, paste the key, and click **Add secret**.
-   The workflow passes it to the build. Secrets are never shown in logs or on the page.
-3. **On your own computer:** either run `export OPENALEX_API_KEY=your-key` in the terminal
-   before building, or save the key in a file called `.openalex_key` in the project folder.
-   That file is listed in `.gitignore`, so it is never uploaded.
-
-Never put the key in `config.yml`: the repository is public.
-
-The free key allows 100,000 "credits" a day. One build uses about 10–30, so the limit
-won't be a problem.
-
-## 4. Adjust what the page shows
-
-Everything is in `config.yml`:
-
-| To change | Edit |
+| File | Contents |
 |---|---|
-| Paper categories and search terms | `paper_widgets:` (instructions are at the top of that section) |
-| Which journals count as "key" and "top tier" | `journals:` |
-| How far back to look for papers | `window_days:` (overall, or per tab) |
-| News feeds | `news:` (any RSS or Atom feed) |
-| Quick links | `links:` |
-| Group members, sections and papers to leave out | `group:` |
-| Calendar ("Coming up"): sources, keywords, conferences, time windows | `events:` |
-| Turn off a daily box | `daily:` (remove the line or set it to `false`) |
+| `index.html`, `data.json` | The dashboard, and the data it shows |
+| `publications.html`, `publications.json` | The publications page, and the group's papers as JSON |
+| `publications_report.txt` | Group papers that were left out, and why |
+| `events_report.txt` | Every event the calendar considered, and why it was shown or left out |
 
-**Tips for the paper searches**
-- A tab with `journals: key` only shows papers from the two journal lists. The tabs for
-  incretin drugs, MASLD/MASH, murine models and clinical trials are set up this way because
-  they would otherwise be flooded.
-- If a tab is noisy, add terms to `none_of:`, make the terms more specific, or switch it to
-  `journals: key`.
-- If a tab is empty, widen `window_days` or add synonyms.
-- The filter buttons (All · Preprints · Reviews · Key journals) work automatically for every tab.
+## Getting started
 
-Design changes (colours, layout) go in `template/index.html` (dashboard) and
-`template/publications.html` (publications page).
+To see the layout, open `example.html` in a browser; nothing needs to be installed.
 
-## 5. Check that it keeps working
-
-- **Feed status:** the line at the bottom of the page shows whether every source updated.
-  Click it for details. If one source fails, the rest of the page still works.
-- **Keep-alive:** GitHub pauses scheduled builds after 60 days without any change to the
-  repository, and sends an email when it does. Any small edit, e.g. to `config.yml`,
-  restarts it. You can also re-enable it in the Actions tab.
-- **Manual rebuild:** Actions tab → Build and publish dashboard → Run workflow.
-
-## Good to know
-
-- **The page is public.** Free GitHub Pages sites can be seen by anyone with the link. Don't
-  put unpublished or internal information in `config.yml`. If that's needed, the `site/`
-  folder can instead be hosted on a hospital or university server.
-- **Target of the day** rotates through human proteins targeted by approved drugs, using
-  ChEMBL (the drug database behind Open Targets' drug data) and UniProt. All of its text
-  comes straight from those databases. If ChEMBL is unreachable, it falls back to a fixed
-  list of well-known drug targets.
-- **Images.** The data-insight chart and the molecule-of-the-month image are openly licensed,
-  so they are downloaded at build time and stored with the page. News thumbnails are copyrighted
-  by the publishers, so they are shown straight from the publishers' sites and never copied.
-  Retraction Watch and some eLife items have images in their feeds. For Nature and Science, the
-  build opens each article page and uses the preview image it declares (`fetch_images: true` in
-  `config.yml`), which adds 10–20 seconds to the build. When an item has no image, the feed's logo
-  is shown, or the source name if there is no logo.
-- **Coming up** reads DDSA's events API, ELIXIR TeSS's search API, and the event pages of the NNF
-  Science Cluster, DDEA and the conference websites in `config.yml`. Pages are only read if the
-  site's robots.txt allows it. Conference dates are read from the societies' own pages each day,
-  so you only add a conference once; if a society moves its pages, the build says so.
-- **Relevance** is keyword-based. It catches most relevant papers but not all, and lets
-  some noise through.
-
-## Run it on your own computer (optional)
-
-Requires Python 3.10 or newer. Use a virtual environment so the packages stay separate
-from the rest of your Python setup:
+To build the page on your own computer (Python 3.10 or newer):
 
 ```bash
 python -m venv .venv
-source .venv/Scripts/activate      # Windows (Git Bash); on macOS/Linux: source .venv/bin/activate
+source .venv/bin/activate                          # Windows (Git Bash): source .venv/Scripts/activate
 pip install -r requirements.txt
 
-python scripts/build.py                            # live data
 python scripts/build.py --sample sample_data.json  # example data, no internet needed
+python scripts/build.py                            # live data
 ```
 
-Then open `site/index.html` in your browser (in Git Bash: `start site/index.html`).
+Then open `site/index.html`. Add `--quiet` to only see a summary in the terminal.
 
-While it runs, the script prints what it is doing, step by step:
+To publish your own copy on GitHub Pages, add the group's ORCIDs and an OpenAlex key, and
+adjust the searches, follow **[docs/HOW_TO_SET_UP.md](docs/HOW_TO_SET_UP.md)**.
 
-```
-[1/5] New papers (Europe PMC)
-  Biomarkers & proteomics
-    ok  Plasma proteomics                   23 papers (21 days, all journals)
-    ...
-[4/5] Daily boxes
-    ..  downloading approved drugs and their targets from ChEMBL (can take a minute)
-    ok  Target of the day                   PPARG (4 approved drugs)
-...
-Done in 48 s. All sources updated.
-```
+## Good to know
 
-Lines starting with `!!` are sources that failed; the rest of the page is still built.
-Add `--quiet` (or `-q`) to hide these messages and only see the summary at the end:
+- **The page is public.** Anyone with the link can see a GitHub Pages site, so `config.yml`
+  should not contain anything internal. API keys go in GitHub secrets, never in the repository.
+- **Paper relevance is keyword-based.** The searches catch most relevant papers, but not all,
+  and let some noise through. They are adjusted in `config.yml`.
+- **The group's papers depend on ORCID links.** A paper is only found if at least one member's
+  ORCID is linked to it in OpenAlex or PubMed. OpenAlex sometimes mixes up people with similar
+  names; the build checks for this and lists the affected papers in `publications_report.txt`.
+- **Scheduled builds pause after 60 days** without changes to the repository (a GitHub rule).
+  Any small commit restarts them.
 
-```bash
-python scripts/build.py --quiet
-```
-The same messages appear in the GitHub Actions log (Actions tab → the latest run → build).
-If a server is busy, the script waits and retries a few times before giving up.
+## Documentation
+
+- [docs/HOW_TO_SET_UP.md](docs/HOW_TO_SET_UP.md): putting it online, adding publications,
+  adjusting the content, keeping it running
+- [docs/HOW_IT_WORKS.md](docs/HOW_IT_WORKS.md): what the build script does, step by step, and
+  troubleshooting
+- The comments in [`config.yml`](config.yml): what each setting does
